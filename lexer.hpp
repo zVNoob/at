@@ -67,6 +67,7 @@ public:
               spacing.clear();
             }
             result += token;
+            spacing.clear();
             continue;
           }
           if (token == '.') {

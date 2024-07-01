@@ -439,7 +439,8 @@ namespace yy {
     YYerror = 256,                 // error
     YYUNDEF = 257,                 // "invalid token"
     CONSTANT = 258,                // CONSTANT
-    IDENTIFIER = 259               // IDENTIFIER
+    IDENTIFIER = 259,              // IDENTIFIER
+    POWER = 260                    // POWER
       };
       /// Backward compatibility alias (Bison 3.6).
       typedef token_kind_type yytokentype;
@@ -456,7 +457,7 @@ namespace yy {
     {
       enum symbol_kind_type
       {
-        YYNTOKENS = 8, ///< Number of tokens.
+        YYNTOKENS = 13, ///< Number of tokens.
         S_YYEMPTY = -2,
         S_YYEOF = 0,                             // "end of file"
         S_YYerror = 1,                           // error
@@ -465,11 +466,16 @@ namespace yy {
         S_IDENTIFIER = 4,                        // IDENTIFIER
         S_5_ = 5,                                // '+'
         S_6_ = 6,                                // '-'
-        S_7_ = 7,                                // ';'
-        S_YYACCEPT = 8,                          // $accept
-        S_input = 9,                             // input
-        S_expr = 10,                             // expr
-        S_exp_const = 11                         // exp_const
+        S_7_ = 7,                                // '*'
+        S_8_ = 8,                                // '/'
+        S_POWER = 9,                             // POWER
+        S_10_ = 10,                              // ';'
+        S_11_ = 11,                              // '('
+        S_12_ = 12,                              // ')'
+        S_YYACCEPT = 13,                         // $accept
+        S_input = 14,                            // input
+        S_expr = 15,                             // expr
+        S_exp_const = 16                         // exp_const
       };
     };
 
@@ -834,6 +840,21 @@ switch (yykind)
         return symbol_type (token::IDENTIFIER, v, l);
       }
 #endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_POWER (location_type l)
+      {
+        return symbol_type (token::POWER, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_POWER (const location_type& l)
+      {
+        return symbol_type (token::POWER, l);
+      }
+#endif
 
 
     class context
@@ -937,7 +958,7 @@ switch (yykind)
 
 #if YYDEBUG
     // YYRLINE[YYN] -- Source line where rule number YYN was defined.
-    static const signed char yyrline_[];
+    static const unsigned char yyrline_[];
     /// Report on the debug stream that the rule \a r is going to be reduced.
     virtual void yy_reduce_print_ (int r) const;
     /// Print the state stack on the debug stream.
@@ -1164,9 +1185,9 @@ switch (yykind)
     /// Constants.
     enum
     {
-      yylast_ = 7,     ///< Last index in yytable_.
+      yylast_ = 28,     ///< Last index in yytable_.
       yynnts_ = 4,  ///< Number of nonterminal symbols.
-      yyfinal_ = 5 ///< Termination state number.
+      yyfinal_ = 7 ///< Termination state number.
     };
 
 
@@ -1177,7 +1198,7 @@ switch (yykind)
 
 
 } // yy
-#line 1181 "parser.tab.hh"
+#line 1202 "parser.tab.hh"
 
 
 

@@ -439,7 +439,7 @@ namespace yy {
         switch (yykind)
     {
       case symbol_kind::S_exp_const: // exp_const
-#line 34 "parser.y"
+#line 37 "parser.y"
                  { 
 if (holds_alternative<BigInt>(yysym.value.template as < std::variant<BigInt, BigFraction, std::string> > ())) {
 	std::cout << get<BigInt>(yysym.value.template as < std::variant<BigInt, BigFraction, std::string> > ());
@@ -710,27 +710,125 @@ else if (holds_alternative<BigFraction>(yysym.value.template as < std::variant<B
           switch (yyn)
             {
   case 5: // exp_const: CONSTANT
-#line 56 "parser.y"
+#line 59 "parser.y"
            { yylhs.value.as < std::variant<BigInt, BigFraction, std::string> > () = yystack_[0].value.as < std::variant<BigInt, BigFraction, std::string> > (); }
 #line 716 "parser.tab.cc"
     break;
 
   case 6: // exp_const: exp_const '+' exp_const
-#line 57 "parser.y"
+#line 60 "parser.y"
                                            {
 		 if (holds_alternative<BigInt>(yystack_[2].value.as < std::variant<BigInt, BigFraction, std::string> > ())) {
 		 	if (holds_alternative<BigInt>(yystack_[0].value.as < std::variant<BigInt, BigFraction, std::string> > ())) // int + int
 		 		yylhs.value.as < std::variant<BigInt, BigFraction, std::string> > () = get<BigInt>(yystack_[2].value.as < std::variant<BigInt, BigFraction, std::string> > ()) + get<BigInt>(yystack_[0].value.as < std::variant<BigInt, BigFraction, std::string> > ());
 		 	else if (holds_alternative<BigFraction>(yystack_[0].value.as < std::variant<BigInt, BigFraction, std::string> > ())) // int + fraction
 		 		yylhs.value.as < std::variant<BigInt, BigFraction, std::string> > () = BigFraction(get<BigInt>(yystack_[2].value.as < std::variant<BigInt, BigFraction, std::string> > ())) + get<BigFraction>(yystack_[0].value.as < std::variant<BigInt, BigFraction, std::string> > ());
-		 	else throw std::runtime_error("type mismatch, expected int or double");
+		 	else throw syntax_error(yystack_[0].location,"type mismatch, expected integer or decimal");
 		 	}
+		 else if (holds_alternative<BigFraction>(yystack_[2].value.as < std::variant<BigInt, BigFraction, std::string> > ())) {
+		 	if (holds_alternative<BigInt>(yystack_[0].value.as < std::variant<BigInt, BigFraction, std::string> > ())) // fraction + int
+		 		yylhs.value.as < std::variant<BigInt, BigFraction, std::string> > () = get<BigFraction>(yystack_[2].value.as < std::variant<BigInt, BigFraction, std::string> > ()) + BigFraction(get<BigInt>(yystack_[0].value.as < std::variant<BigInt, BigFraction, std::string> > ()));
+		 	else if (holds_alternative<BigFraction>(yystack_[0].value.as < std::variant<BigInt, BigFraction, std::string> > ())) // fraction + fraction
+		 		yylhs.value.as < std::variant<BigInt, BigFraction, std::string> > () = get<BigFraction>(yystack_[2].value.as < std::variant<BigInt, BigFraction, std::string> > ()) + get<BigFraction>(yystack_[0].value.as < std::variant<BigInt, BigFraction, std::string> > ());
+		 	else throw syntax_error(yystack_[0].location,"type mismatch, expected integer or decimal");
 		 }
-#line 730 "parser.tab.cc"
+		 else if (holds_alternative<std::string>(yystack_[2].value.as < std::variant<BigInt, BigFraction, std::string> > ())) {
+			 if (holds_alternative<std::string>(yystack_[0].value.as < std::variant<BigInt, BigFraction, std::string> > ())) // string + string
+				 yylhs.value.as < std::variant<BigInt, BigFraction, std::string> > () = get<std::string>(yystack_[2].value.as < std::variant<BigInt, BigFraction, std::string> > ()) + get<std::string>(yystack_[0].value.as < std::variant<BigInt, BigFraction, std::string> > ());
+			 else throw syntax_error(yystack_[0].location,"type mismatch, expected string");
+		 }
+		 else throw syntax_error(yystack_[2].location,"type mismatch, expected integer,decimal or string");
+		 }
+#line 743 "parser.tab.cc"
+    break;
+
+  case 7: // exp_const: exp_const '-' exp_const
+#line 82 "parser.y"
+                                           {
+		 if (holds_alternative<BigInt>(yystack_[2].value.as < std::variant<BigInt, BigFraction, std::string> > ())) {
+		 	if (holds_alternative<BigInt>(yystack_[0].value.as < std::variant<BigInt, BigFraction, std::string> > ())) // int - int
+		 		yylhs.value.as < std::variant<BigInt, BigFraction, std::string> > () = get<BigInt>(yystack_[2].value.as < std::variant<BigInt, BigFraction, std::string> > ()) - get<BigInt>(yystack_[0].value.as < std::variant<BigInt, BigFraction, std::string> > ());
+		 	else if (holds_alternative<BigFraction>(yystack_[0].value.as < std::variant<BigInt, BigFraction, std::string> > ())) // int - fraction
+		 		yylhs.value.as < std::variant<BigInt, BigFraction, std::string> > () = BigFraction(get<BigInt>(yystack_[2].value.as < std::variant<BigInt, BigFraction, std::string> > ())) - get<BigFraction>(yystack_[0].value.as < std::variant<BigInt, BigFraction, std::string> > ());
+		 	else throw syntax_error(yystack_[0].location,"type mismatch, expected integer or decimal");
+		 }
+		 else if (holds_alternative<BigFraction>(yystack_[2].value.as < std::variant<BigInt, BigFraction, std::string> > ())) {
+		 	if (holds_alternative<BigInt>(yystack_[0].value.as < std::variant<BigInt, BigFraction, std::string> > ())) // fraction - int
+		 		yylhs.value.as < std::variant<BigInt, BigFraction, std::string> > () = get<BigFraction>(yystack_[2].value.as < std::variant<BigInt, BigFraction, std::string> > ()) - BigFraction(get<BigInt>(yystack_[0].value.as < std::variant<BigInt, BigFraction, std::string> > ()));
+		 	else if (holds_alternative<BigFraction>(yystack_[0].value.as < std::variant<BigInt, BigFraction, std::string> > ())) // fraction - fraction
+		 		yylhs.value.as < std::variant<BigInt, BigFraction, std::string> > () = get<BigFraction>(yystack_[2].value.as < std::variant<BigInt, BigFraction, std::string> > ()) - get<BigFraction>(yystack_[0].value.as < std::variant<BigInt, BigFraction, std::string> > ());
+		 	else throw syntax_error(yystack_[0].location,"type mismatch, expected integer or decimal");
+		 }
+		 else throw syntax_error(yystack_[2].location,"type mismatch, expected integer,decimal or string");
+		 }
+#line 765 "parser.tab.cc"
+    break;
+
+  case 8: // exp_const: exp_const '*' exp_const
+#line 99 "parser.y"
+                                           {
+			 if (holds_alternative<BigInt>(yystack_[2].value.as < std::variant<BigInt, BigFraction, std::string> > ())) {
+			 	if (holds_alternative<BigInt>(yystack_[0].value.as < std::variant<BigInt, BigFraction, std::string> > ())) // int * int
+			 		yylhs.value.as < std::variant<BigInt, BigFraction, std::string> > () = get<BigInt>(yystack_[2].value.as < std::variant<BigInt, BigFraction, std::string> > ()) * get<BigInt>(yystack_[0].value.as < std::variant<BigInt, BigFraction, std::string> > ());
+			 	else if (holds_alternative<BigFraction>(yystack_[0].value.as < std::variant<BigInt, BigFraction, std::string> > ())) // int * fraction
+			 		yylhs.value.as < std::variant<BigInt, BigFraction, std::string> > () = BigFraction(get<BigInt>(yystack_[2].value.as < std::variant<BigInt, BigFraction, std::string> > ())) * get<BigFraction>(yystack_[0].value.as < std::variant<BigInt, BigFraction, std::string> > ());
+			 	else throw syntax_error(yystack_[0].location,"type mismatch, expected integer or decimal");
+			 }
+			 else if (holds_alternative<BigFraction>(yystack_[2].value.as < std::variant<BigInt, BigFraction, std::string> > ())) {
+			 	if (holds_alternative<BigInt>(yystack_[0].value.as < std::variant<BigInt, BigFraction, std::string> > ())) // fraction * int
+			 		yylhs.value.as < std::variant<BigInt, BigFraction, std::string> > () = get<BigFraction>(yystack_[2].value.as < std::variant<BigInt, BigFraction, std::string> > ()) * BigFraction(get<BigInt>(yystack_[0].value.as < std::variant<BigInt, BigFraction, std::string> > ()));
+			 	else if (holds_alternative<BigFraction>(yystack_[0].value.as < std::variant<BigInt, BigFraction, std::string> > ())) // fraction * fraction
+			 		yylhs.value.as < std::variant<BigInt, BigFraction, std::string> > () = get<BigFraction>(yystack_[2].value.as < std::variant<BigInt, BigFraction, std::string> > ()) * get<BigFraction>(yystack_[0].value.as < std::variant<BigInt, BigFraction, std::string> > ());
+			 	else throw syntax_error(yystack_[0].location,"type mismatch, expected integer or decimal");
+			 }
+			 else throw syntax_error(yystack_[2].location,"type mismatch, expected integer,decimal or string");
+		 }
+#line 787 "parser.tab.cc"
+    break;
+
+  case 9: // exp_const: exp_const '/' exp_const
+#line 116 "parser.y"
+                                           {
+			 if (holds_alternative<BigInt>(yystack_[2].value.as < std::variant<BigInt, BigFraction, std::string> > ())) {
+			 	if (holds_alternative<BigInt>(yystack_[0].value.as < std::variant<BigInt, BigFraction, std::string> > ())) // int / int
+			 		yylhs.value.as < std::variant<BigInt, BigFraction, std::string> > () = BigFraction(get<BigInt>(yystack_[2].value.as < std::variant<BigInt, BigFraction, std::string> > ())) / BigFraction(get<BigInt>(yystack_[0].value.as < std::variant<BigInt, BigFraction, std::string> > ()));
+			 	else if (holds_alternative<BigFraction>(yystack_[0].value.as < std::variant<BigInt, BigFraction, std::string> > ())) // int / fraction
+			 		yylhs.value.as < std::variant<BigInt, BigFraction, std::string> > () = BigFraction(get<BigInt>(yystack_[2].value.as < std::variant<BigInt, BigFraction, std::string> > ())) / get<BigFraction>(yystack_[0].value.as < std::variant<BigInt, BigFraction, std::string> > ());
+			 	else throw syntax_error(yystack_[0].location,"type mismatch, expected integer or decimal");
+			 }
+			 else if (holds_alternative<BigFraction>(yystack_[2].value.as < std::variant<BigInt, BigFraction, std::string> > ())) {
+			 	if (holds_alternative<BigInt>(yystack_[0].value.as < std::variant<BigInt, BigFraction, std::string> > ())) // fraction / int
+			 		yylhs.value.as < std::variant<BigInt, BigFraction, std::string> > () = get<BigFraction>(yystack_[2].value.as < std::variant<BigInt, BigFraction, std::string> > ()) / BigFraction(get<BigInt>(yystack_[0].value.as < std::variant<BigInt, BigFraction, std::string> > ()));
+			 	else if (holds_alternative<BigFraction>(yystack_[0].value.as < std::variant<BigInt, BigFraction, std::string> > ())) // fraction / fraction
+			 		yylhs.value.as < std::variant<BigInt, BigFraction, std::string> > () = get<BigFraction>(yystack_[2].value.as < std::variant<BigInt, BigFraction, std::string> > ()) / get<BigFraction>(yystack_[0].value.as < std::variant<BigInt, BigFraction, std::string> > ());
+			 	else throw syntax_error(yystack_[0].location,"type mismatch, expected integer or decimal");
+			 }
+			 else throw syntax_error(yystack_[2].location,"type mismatch, expected integer,decimal or string");
+		 }
+#line 809 "parser.tab.cc"
+    break;
+
+  case 10: // exp_const: exp_const '/' '/' exp_const
+#line 133 "parser.y"
+                                               {
+			 if (holds_alternative<BigInt>(yystack_[3].value.as < std::variant<BigInt, BigFraction, std::string> > ())) {
+				 if (holds_alternative<BigInt>(yystack_[0].value.as < std::variant<BigInt, BigFraction, std::string> > ())) // int // int
+					 yylhs.value.as < std::variant<BigInt, BigFraction, std::string> > () = get<BigInt>(yystack_[3].value.as < std::variant<BigInt, BigFraction, std::string> > ()) / get<BigInt>(yystack_[0].value.as < std::variant<BigInt, BigFraction, std::string> > ());
+				 else throw syntax_error(yystack_[0].location,"type mismatch, expected integer");
+			 }
+			 else throw syntax_error(yystack_[3].location,"type mismatch, expected integer");
+		 }
+#line 822 "parser.tab.cc"
+    break;
+
+  case 11: // exp_const: '(' exp_const ')'
+#line 141 "parser.y"
+                                     { yylhs.value.as < std::variant<BigInt, BigFraction, std::string> > () = yystack_[1].value.as < std::variant<BigInt, BigFraction, std::string> > (); }
+#line 828 "parser.tab.cc"
     break;
 
 
-#line 734 "parser.tab.cc"
+#line 832 "parser.tab.cc"
 
             default:
               break;
@@ -1082,62 +1180,74 @@ else if (holds_alternative<BigFraction>(yysym.value.template as < std::variant<B
   }
 
 
-  const signed char parser::yypact_ninf_ = -6;
+  const signed char parser::yypact_ninf_ = -8;
 
   const signed char parser::yytable_ninf_ = -1;
 
   const signed char
   parser::yypact_[] =
   {
-      -3,    -6,     1,    -5,    -2,    -6,    -3,    -3,    -6,    -6
+       1,    -8,     1,     5,    -7,    20,    12,    -8,     1,     1,
+       1,     1,     3,    -8,    -8,    -6,    -6,    -8,     1,    -8,
+      -8
   };
 
   const signed char
   parser::yydefact_[] =
   {
-       2,     5,     0,     0,     4,     1,     2,     0,     3,     6
+       2,     5,     0,     0,     0,     4,     0,     1,     2,     0,
+       0,     0,     0,    11,     3,     6,     7,     8,     0,     9,
+      10
   };
 
   const signed char
   parser::yypgoto_[] =
   {
-      -6,    -1,    -6,     0
+      -8,     7,    -8,    -2
   };
 
   const signed char
   parser::yydefgoto_[] =
   {
-       0,     2,     3,     4
+       0,     3,     4,     5
   };
 
   const signed char
   parser::yytable_[] =
   {
-       1,     5,     6,     7,     0,     8,     0,     9
+       6,    11,    12,     8,     1,     7,     1,    15,    16,    17,
+      19,    18,     2,     0,     2,    14,    20,     9,    10,    11,
+      12,     0,     0,     0,    13,     9,    10,    11,    12
   };
 
   const signed char
   parser::yycheck_[] =
   {
-       3,     0,     7,     5,    -1,     6,    -1,     7
+       2,     7,     8,    10,     3,     0,     3,     9,    10,    11,
+      12,     8,    11,    -1,    11,     8,    18,     5,     6,     7,
+       8,    -1,    -1,    -1,    12,     5,     6,     7,     8
   };
 
   const signed char
   parser::yystos_[] =
   {
-       0,     3,     9,    10,    11,     0,     7,     5,     9,    11
+       0,     3,    11,    14,    15,    16,    16,     0,    10,     5,
+       6,     7,     8,    12,    14,    16,    16,    16,     8,    16,
+      16
   };
 
   const signed char
   parser::yyr1_[] =
   {
-       0,     8,     9,     9,    10,    11,    11
+       0,    13,    14,    14,    15,    16,    16,    16,    16,    16,
+      16,    16
   };
 
   const signed char
   parser::yyr2_[] =
   {
-       0,     2,     0,     3,     1,     1,     3
+       0,     2,     0,     3,     1,     1,     3,     3,     3,     3,
+       4,     3
   };
 
 
@@ -1148,17 +1258,18 @@ else if (holds_alternative<BigFraction>(yysym.value.template as < std::variant<B
   const parser::yytname_[] =
   {
   "\"end of file\"", "error", "\"invalid token\"", "CONSTANT",
-  "IDENTIFIER", "'+'", "'-'", "';'", "$accept", "input", "expr",
-  "exp_const", YY_NULLPTR
+  "IDENTIFIER", "'+'", "'-'", "'*'", "'/'", "POWER", "';'", "'('", "')'",
+  "$accept", "input", "expr", "exp_const", YY_NULLPTR
   };
 #endif
 
 
 #if YYDEBUG
-  const signed char
+  const unsigned char
   parser::yyrline_[] =
   {
-       0,    49,    49,    50,    53,    56,    57
+       0,    52,    52,    53,    56,    59,    60,    82,    99,   116,
+     133,   141
   };
 
   void
@@ -1201,8 +1312,8 @@ else if (holds_alternative<BigFraction>(yysym.value.template as < std::variant<B
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-       2,     2,     2,     5,     2,     6,     2,     2,     2,     2,
-       2,     2,     2,     2,     2,     2,     2,     2,     2,     7,
+      11,    12,     7,     5,     2,     6,     2,     8,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,    10,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
@@ -1222,10 +1333,11 @@ else if (holds_alternative<BigFraction>(yysym.value.template as < std::variant<B
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-       2,     2,     2,     2,     2,     2,     1,     2,     3,     4
+       2,     2,     2,     2,     2,     2,     1,     2,     3,     4,
+       9
     };
     // Last valid token kind.
-    const int code_max = 259;
+    const int code_max = 260;
 
     if (t <= 0)
       return symbol_kind::S_YYEOF;
@@ -1236,9 +1348,9 @@ else if (holds_alternative<BigFraction>(yysym.value.template as < std::variant<B
   }
 
 } // yy
-#line 1240 "parser.tab.cc"
+#line 1352 "parser.tab.cc"
 
-#line 67 "parser.y"
+#line 143 "parser.y"
 
 #include "lexer.hpp"
 namespace yy {

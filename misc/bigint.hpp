@@ -106,6 +106,7 @@ public:
     mpz_neg(result.value, value);
     return result;
   }
+  BigInt &operator+() { return *this; }
   // io
   friend std::ostream &operator<<(std::ostream &os, const BigInt &that) {
     os << mpz_get_str(nullptr, 10, that.value);

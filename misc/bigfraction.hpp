@@ -67,4 +67,38 @@ public:
     result.reduce();
     return result;
   }
+  BigFraction operator-(const BigFraction &that) const {
+    BigFraction result;
+    result.numerator =
+        numerator * that.denominator - that.numerator * denominator;
+    result.denominator = denominator * that.denominator;
+    result.reduce();
+    return result;
+  }
+  BigFraction operator*(const BigFraction &that) const {
+    BigFraction result;
+    result.numerator = numerator * that.numerator;
+    result.denominator = denominator * that.denominator;
+    result.reduce();
+    return result;
+  }
+  BigFraction operator/(const BigFraction &that) const {
+    BigFraction result;
+    result.numerator = numerator * that.denominator;
+    result.denominator = denominator * that.numerator;
+    result.reduce();
+    return result;
+  }
+  BigFraction operator+=(const BigFraction &that) {
+    *this = *this + that;
+    return *this;
+  }
+  // unary
+  BigFraction &operator+() { return *this; }
+  BigFraction operator-() const {
+    BigFraction result;
+    result.numerator = -numerator;
+    result.denominator = denominator;
+    return result;
+  }
 };

@@ -23,25 +23,17 @@ class Lexer;
 
 
 %token <std::variant<BigInt, BigFraction, std::string>> CONSTANT 
-%nterm <std::variant<BigInt, BigFraction, std::string>> exp_const
 
 %token <std::string> IDENTIFIER
 
+
 %left '+' '-'
+%left '*' '/'
+%right POWER
 
 %start input
 
-%printer { 
-if (holds_alternative<BigInt>($$)) {
-	std::cout << get<BigInt>($$);
-}
-else if (holds_alternative<std::string>($$)) {
-	std::cout << get<std::string>($$);
-}
-else if (holds_alternative<BigFraction>($$)) {
-	std::cout << get<BigFraction>($$);
-}
-} exp_const
+
 
 %%
 
@@ -50,19 +42,11 @@ input: %empty
 	 | expr ';' input
 	 ;
 
-expr: exp_const
+expr: exp_eval
 	;
 
-exp_const: CONSTANT
-		 | exp_const '+' exp_const {
-		 if (holds_alternative<BigInt>($1)) {
-		 	if (holds_alternative<BigInt>($3)) // int + int
-		 		$$ = get<BigInt>($1) + get<BigInt>($3);
-		 	else if (holds_alternative<BigFraction>($3)) // int + fraction
-		 		$$ = BigFraction(get<BigInt>($1)) + get<BigFraction>($3);
-		 	else throw std::runtime_error("type mismatch, expected int or double");
-		 	}
-		 }
+exp_eval: CONSTANT
+
 		 ;
 %%
 #include "lexer.hpp"
