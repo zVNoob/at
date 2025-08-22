@@ -36,7 +36,6 @@ public:
     }
     return *this;
   }
-  ~BigFraction() {}
   explicit BigFraction(const BigInt &numerator)
       : numerator(numerator), denominator(BigInt(1)) {}
 

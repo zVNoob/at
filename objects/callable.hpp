@@ -6,7 +6,7 @@
 #include "object.hpp"
 
 namespace callable {
-typedef std::vector<std::shared_ptr<object::Object>> arg_list;
+using arg_list = std::vector<std::shared_ptr<object::Object>>;
 class Callable : public object::Object {
 public:
   explicit Callable(parser::location loc);

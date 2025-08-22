@@ -15,9 +15,8 @@ using namespace type;
     } 
   }
   InternalFunction::InternalFunction(std::function<arg_list(arg_list)> func, std::source_location loc) : 
-    func(std::move(func)),
+    func(std::move(func)), source_name(loc.file_name()),
     Callable(parser::location(0,loc.line(),loc.column())) {
-      this->source_name = loc.file_name();
       this->loc = parser::location(&this->source_name,loc.line(),loc.column());
     }
 }

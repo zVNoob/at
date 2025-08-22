@@ -9,7 +9,7 @@ namespace type {
 class Type : public object::Object {
   std::string name;
 public:
-  std::map<std::string, std::shared_ptr<Object>> members;
+  std::map<std::string, std::shared_ptr<Object>, std::less<>> members;
   explicit Type(parser::location loc,std::string name);
   const std::string to_string() const override;
 };

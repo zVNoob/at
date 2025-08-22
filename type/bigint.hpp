@@ -27,7 +27,7 @@ public:
   explicit BigInt(const std::string &str) { mpz_init_set_str(value, str.c_str(), 10); }
   explicit BigInt(long n) { mpz_init_set_si(value, n); }
   ~BigInt() {
-    if (value->_mp_d)
+    if (value[0]._mp_d)
       mpz_clear(value);
   }
   // calculation

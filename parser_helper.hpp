@@ -7,8 +7,8 @@ namespace parser {
 
 std::shared_ptr<object::Object> exec_binary_op(std::shared_ptr<object::Object> lhs, 
                                                std::shared_ptr<object::Object> rhs, 
-                                               std::string op);
+                                               const std::string& op);
 std::shared_ptr<object::Object> exec_unary_op(std::shared_ptr<object::Object> rhs, 
-                                              std::string op);
+                                              const std::string& op);
 
 }

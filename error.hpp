@@ -22,17 +22,17 @@ public:
 
 class eval_error : public parser::Parser::syntax_error {
 public:
-  eval_error(const std::string& msg,parser::location loc = parser::location()) : parser::Parser::syntax_error(loc,msg) {}
+  explicit eval_error(const std::string& msg,parser::location loc = parser::location()) : parser::Parser::syntax_error(loc,msg) {}
 };
 
 class type_mismatch : public eval_error {
 public:
-  type_mismatch(object::Object* obj) : eval_error("type mismatch: " + obj->to_string()) {}
+  explicit type_mismatch(object::Object* obj) : eval_error("type mismatch: " + obj->to_string()) {}
 };
 
 class unsupported_operator : public eval_error {
 public:
-  unsupported_operator(std::shared_ptr<object::Object> obj, std::string op) : 
+  explicit unsupported_operator(std::shared_ptr<object::Object> obj, std::string op) : 
     eval_error(obj->to_string() + ": unsupported operator: " + op, obj->loc) {}
 };
 

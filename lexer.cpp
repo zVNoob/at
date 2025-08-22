@@ -19,7 +19,7 @@ std::pair<char, parser::position> Lexer::get_char() {
     current_col++;
   }
   if (c == '\n') {
-    buffer.push_back("");
+    buffer.emplace_back("");
     current_col = 1;
   }
   
@@ -56,7 +56,7 @@ void Lexer::process_string(parser::Parser::value_type* yylval,parser::Parser::lo
 int Lexer::process_multichar_token(char current_char,
                                    parser::Parser::value_type* yylval,
                                    parser::Parser::location_type* yylloc) {
-  std::string s = std::string(1, current_char);
+  auto s = std::string(1, current_char);
   int token_type;
   if (current_char >= '0' && current_char <= '9') token_type = parser::Parser::token::INTEGER;
   else token_type = parser::Parser::token::IDENTIFIER;

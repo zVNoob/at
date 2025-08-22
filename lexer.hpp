@@ -18,7 +18,7 @@ namespace lexer {
   std::pair<char, parser::position> pending_char;
   public:
     std::vector<std::string> buffer = {""};
-    Lexer(std::string filename, error::ErrorReporter* error_reporter) : filename(filename), error_reporter(error_reporter) {};
+    Lexer(const std::string& filename, error::ErrorReporter* error_reporter) : filename(filename), error_reporter(error_reporter) {};
     virtual int lex(parser::Parser::value_type* yylval,parser::Parser::location_type* yylloc);
 
   protected:
