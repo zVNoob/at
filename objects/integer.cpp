@@ -44,7 +44,7 @@ Integer::Integer(BigInt value,parser::location loc) : Object(loc) {
   this->type = Get_Integer_type();
 }
 
-const std::string Integer::to_string() const {
+std::string Integer::to_string() const {
   std::stringstream ss;
   ss << this->value;
   return ss.str();

@@ -67,33 +67,31 @@ public:
     return os;
   }
   // calculation
-  BigFraction operator+(const BigFraction &that) const {
+  friend BigFraction operator+(const BigFraction& a,const BigFraction& b) {
     BigFraction result;
-    result.numerator =
-        numerator * that.denominator + that.numerator * denominator;
-    result.denominator = denominator * that.denominator;
+    result.numerator = a.numerator * b.denominator + b.numerator * a.denominator;
+    result.denominator = a.denominator * b.denominator;
     result.reduce();
     return result;
   }
-  BigFraction operator-(const BigFraction &that) const {
+  friend BigFraction operator-(const BigFraction& a,const BigFraction& b) {
     BigFraction result;
-    result.numerator =
-        numerator * that.denominator - that.numerator * denominator;
-    result.denominator = denominator * that.denominator;
+    result.numerator = a.numerator * b.denominator - b.numerator * a.denominator;
+    result.denominator = a.denominator * b.denominator;
     result.reduce();
     return result;
   }
-  BigFraction operator*(const BigFraction &that) const {
+  friend BigFraction operator*(const BigFraction& a,const BigFraction& b) {
     BigFraction result;
-    result.numerator = numerator * that.numerator;
-    result.denominator = denominator * that.denominator;
+    result.numerator = a.numerator * b.numerator;
+    result.denominator = a.denominator * b.denominator;
     result.reduce();
     return result;
   }
-  BigFraction operator/(const BigFraction &that) const {
+  friend BigFraction operator/(const BigFraction& a,const BigFraction& b) {
     BigFraction result;
-    result.numerator = numerator * that.denominator;
-    result.denominator = denominator * that.numerator;
+    result.numerator = a.numerator * b.denominator;
+    result.denominator = a.denominator * b.numerator;
     result.reduce();
     return result;
   }
@@ -122,10 +120,6 @@ public:
     return result;
   }
   // comparison
-  bool operator==(const BigFraction &that) const {
-    return numerator == that.numerator && denominator == that.denominator;
-  }
-  bool operator!=(const BigFraction &that) const { return !(*this == that); }
   bool operator<(const BigFraction &that) const {
     return numerator * that.denominator < that.numerator * denominator;
   }

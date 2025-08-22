@@ -32,6 +32,6 @@ String::String(std::string value, parser::location loc) : Object(loc), value(val
   type = Get_String_type();
 }
 
-const std::string String::to_string() const { return "\"" + this->value + "\""; }
+std::string String::to_string() const { return "\"" + this->value + "\""; }
 
 }

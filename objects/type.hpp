@@ -11,6 +11,6 @@ class Type : public object::Object {
 public:
   std::map<std::string, std::shared_ptr<Object>, std::less<>> members;
   explicit Type(parser::location loc,std::string name);
-  const std::string to_string() const override;
+  std::string to_string() const override;
 };
 }

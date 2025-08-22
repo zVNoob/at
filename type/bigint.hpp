@@ -31,29 +31,29 @@ public:
       mpz_clear(value);
   }
   // calculation
-  BigInt operator+(const BigInt &that) const {
+  friend BigInt operator+(const BigInt& a,const BigInt& b){
     BigInt result;
-    mpz_add(result.value, value, that.value);
+    mpz_add(result.value, a.value, b.value);
     return result;
   }
-  BigInt operator-(const BigInt &that) const {
+  friend BigInt operator-(const BigInt& a,const BigInt& b) {
     BigInt result;
-    mpz_sub(result.value, value, that.value);
+    mpz_sub(result.value, a.value, b.value);
     return result;
   }
-  BigInt operator*(const BigInt &that) const {
+  friend BigInt operator*(const BigInt& a,const BigInt& b) {
     BigInt result;
-    mpz_mul(result.value, value, that.value);
+    mpz_mul(result.value, a.value, b.value);
     return result;
   }
-  BigInt operator/(const BigInt &that) const {
+  friend BigInt operator/(const BigInt& a,const BigInt& b) {
     BigInt result;
-    mpz_div(result.value, value, that.value);
+    mpz_div(result.value, a.value, b.value);
     return result;
   }
-  BigInt operator%(const BigInt &that) const {
+  friend BigInt operator%(const BigInt& a,const BigInt& b) {
     BigInt result;
-    mpz_mod(result.value, value, that.value);
+    mpz_mod(result.value, a.value, b.value);
     return result;
   }
   BigInt &operator+=(const BigInt &that) {
