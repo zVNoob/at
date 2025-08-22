@@ -34,9 +34,4 @@ String::String(std::string value, parser::location loc) : Object(loc), value(val
 
 const std::string String::to_string() const { return "\"" + this->value + "\""; }
 
-bool String::operator==(const Object* that) const { 
-  if (typeid(*that) != typeid(*this)) return false;
-  return this->value == static_cast<const String*>(that)->value;
-}
-
 }

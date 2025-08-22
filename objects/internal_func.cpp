@@ -20,11 +20,4 @@ using namespace type;
       this->source_name = loc.file_name();
       this->loc = parser::location(&this->source_name,loc.line(),loc.column());
     }
-  bool InternalFunction::operator==(const Object* that) const {
-    if (typeid(*that) != typeid(*this)) return false;
-    auto _that = static_cast<const InternalFunction*>(that);
-    if (this->func.target_type() != _that->func.target_type()) return false;
-    return this->func.target<std::function<arg_list(arg_list)>>() == 
-          _that->func.target<std::function<arg_list(arg_list)>>();
-  }
 }

@@ -18,7 +18,25 @@ class BigFraction {
   }
 
 public:
-  BigFraction() {}
+  BigFraction() : denominator(BigInt(1)) {}
+  BigFraction(const BigFraction &that) : 
+    numerator(that.numerator), denominator(that.denominator) {}
+  BigFraction(BigFraction &&that) noexcept : 
+    numerator(std::move(that.numerator)), denominator(std::move(that.denominator)) {}
+  BigFraction& operator=(const BigFraction &that) {
+    if (this != &that) {
+      numerator = that.numerator;
+      denominator = that.denominator;
+    }
+    return *this;
+  }
+  BigFraction& operator=(BigFraction &&that) noexcept {
+    if (this != &that) {
+      numerator = std::move(that.numerator);
+      denominator = std::move(that.denominator);
+    }
+    return *this;
+  }
   BigFraction(const BigInt &numerator)
       : numerator(numerator), denominator(BigInt(1)) {}
   BigFraction(std::string &input) {

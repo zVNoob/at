@@ -50,10 +50,4 @@ const std::string Integer::to_string() const {
   return ss.str();
 }
 
-bool Integer::operator==(const Object* that) const {
-  if (typeid(*that) != typeid(*this)) return false;
-  auto _that = static_cast<const Integer*>(that);
-  return this->value == _that->value;
-}
-
 }

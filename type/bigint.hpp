@@ -16,17 +16,19 @@ public:
     }
     return *this;
   }
-  BigInt &operator=(BigInt &&that) {
+  BigInt &operator=(BigInt &&that) noexcept {
     if (this != &that) {
       value[0] = that.value[0];
       that.value[0]._mp_d = nullptr;
     }
     return *this;
   }
+  BigInt(BigInt &&that) noexcept { operator=(that); }
   BigInt(const std::string &str) { mpz_init_set_str(value, str.c_str(), 10); }
   BigInt(int n) { mpz_init_set_si(value, n); }
   ~BigInt() {
-    mpz_clear(value);
+    if (value->_mp_d)
+      mpz_clear(value);
   }
   // calculation
   BigInt operator+(const BigInt &that) const {

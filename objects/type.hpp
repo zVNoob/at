@@ -10,8 +10,7 @@ class Type : public object::Object {
   std::string name;
 public:
   std::map<std::string, std::shared_ptr<Object>> members;
-  Type(parser::location loc,std::string name);
-  bool operator==(const Object* that) const override;
+  explicit Type(parser::location loc,std::string name);
   const std::string to_string() const override;
 };
 }
