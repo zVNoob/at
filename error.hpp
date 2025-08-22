@@ -16,7 +16,7 @@ public:
 class StreamErrorReporter : public ErrorReporter {
 public:
   std::ostream &output;
-  StreamErrorReporter(std::ostream &output) : output(output) {}
+  explicit StreamErrorReporter(std::ostream &output) : output(output) {}
   void report(lexer::Lexer* lexer,parser::location loc,const std::string& msg) override;
 };
 

@@ -80,9 +80,6 @@ public:
   bool operator==(const BigInt &that) const {
     return mpz_cmp(value, that.value) == 0;
   }
-  bool operator!=(const BigInt &that) const {
-    return mpz_cmp(value, that.value) != 0;
-  }
   bool operator<(const BigInt &that) const {
     return mpz_cmp(value, that.value) < 0;
   }

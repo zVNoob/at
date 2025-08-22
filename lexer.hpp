@@ -33,7 +33,7 @@ namespace lexer {
   class StreamLexer : public Lexer {
   std::istream &input;
   public:
-    StreamLexer(std::istream &input, error::ErrorReporter* error_reporter) : input(input),Lexer("stream", error_reporter) {}
+    StreamLexer(std::istream &input, error::ErrorReporter* error_reporter) : Lexer("stream", error_reporter), input(input) {}
     char next() override;
   };
 
