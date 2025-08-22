@@ -12,6 +12,6 @@ public:
   std::shared_ptr<type::Type> type;
   explicit Object(parser::location loc) : loc(loc) {}
   virtual const std::string to_string() const { return "None"; }
-  ~Object() {}
+  virtual ~Object() {}
 };
 }

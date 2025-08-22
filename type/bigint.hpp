@@ -24,8 +24,8 @@ public:
     return *this;
   }
   BigInt(BigInt &&that) noexcept { operator=(that); }
-  BigInt(const std::string &str) { mpz_init_set_str(value, str.c_str(), 10); }
-  BigInt(int n) { mpz_init_set_si(value, n); }
+  explicit BigInt(const std::string &str) { mpz_init_set_str(value, str.c_str(), 10); }
+  explicit BigInt(long n) { mpz_init_set_si(value, n); }
   ~BigInt() {
     if (value->_mp_d)
       mpz_clear(value);

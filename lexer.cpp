@@ -28,51 +28,34 @@ std::pair<char, parser::position> Lexer::get_char() {
 
 const std::string keyword = "!@#$%^&*()-=+[]{};:,<>/?~`";
 
-int Lexer::pure_lex(parser::Parser::value_type* yylval,parser::Parser::location_type* yylloc) {
-  std::pair<char, parser::position> p = {0, yylloc->end};
-  if (pending_char.first) {
-    p = pending_char;
-    yylloc->begin = yylloc->end;
-    pending_char.first = 0;
-  }
-  while (p.first == 0 || p.first == '\n' || p.first == '\t' || p.first == ' ') {
-    yylloc->begin = p.second;
-    p = get_char();
-  }
-  yylloc->begin.filename = p.second.filename;
-  yylloc->end = p.second;
-  char current_char = p.first;
-
-  if (current_char == -1) return parser::Parser::token::YYEOF;
-  if (keyword.find(current_char) != std::string::npos)  return current_char;
-  
-  if (current_char == '\"') {
-    std::string s = "";
-    std::pair<char, parser::position> next_char;
-    while ((next_char = get_char()).first != '\0' && next_char.first != '\"') {
-      if (next_char.first == '\\') {
-        if ((next_char = get_char()).first == '\0') break;
-        switch (next_char.first) {
-          case 'a': s += '\a'; break;
-          case 'b': s += '\b'; break;
-          case 'f': s += '\f'; break;
-          case 'n': s += '\n'; break;
-          case 'r': s += '\r'; break;
-          case 't': s += '\t'; break;
-          case 'v': s += '\v'; break;
-          case '\\': s += '\\'; break;
-          case '\"': s += '\"'; break;
-          default: s += next_char.first;
-        }
+void Lexer::process_string(parser::Parser::value_type* yylval,parser::Parser::location_type* yylloc) {
+  std::string s = "";
+  std::pair<char, parser::position> next_char;
+  while ((next_char = get_char()).first != '\0' && next_char.first != '\"') {
+    if (next_char.first == '\\') {
+      if ((next_char = get_char()).first == '\0') break;
+      switch (next_char.first) {
+        case 'a': s += '\a'; break;
+        case 'b': s += '\b'; break;
+        case 'f': s += '\f'; break;
+        case 'n': s += '\n'; break;
+        case 'r': s += '\r'; break;
+        case 't': s += '\t'; break;
+        case 'v': s += '\v'; break;
+        case '\\': s += '\\'; break;
+        case '\"': s += '\"'; break;
+        default: s += next_char.first;
       }
-      else s += next_char.first;
-      
     }
-    yylval->emplace<std::string>(s);
-    yylloc->end = next_char.second;
-    return parser::Parser::token::STRING;
+    else s += next_char.first;   
   }
+  yylval->emplace<std::string>(s);
+  yylloc->end = next_char.second;
+}
 
+int Lexer::process_multichar_token(char current_char,
+                                   parser::Parser::value_type* yylval,
+                                   parser::Parser::location_type* yylloc) {
   std::string s = std::string(1, current_char);
   int token_type;
   if (current_char >= '0' && current_char <= '9') token_type = parser::Parser::token::INTEGER;
@@ -98,6 +81,32 @@ int Lexer::pure_lex(parser::Parser::value_type* yylval,parser::Parser::location_
   if (token_type == parser::Parser::token::FRACTION) yylval->emplace<BigFraction>(s);
   if (token_type == parser::Parser::token::IDENTIFIER) yylval->emplace<std::string>(s);
   return token_type;
+}
+
+int Lexer::pure_lex(parser::Parser::value_type* yylval,parser::Parser::location_type* yylloc) {
+  std::pair<char, parser::position> p = {0, yylloc->end};
+  if (pending_char.first) {
+    p = pending_char;
+    yylloc->begin = yylloc->end;
+    pending_char.first = 0;
+  }
+  while (p.first == 0 || p.first == '\n' || p.first == '\t' || p.first == ' ') {
+    yylloc->begin = p.second;
+    p = get_char();
+  }
+  yylloc->begin.filename = p.second.filename;
+  yylloc->end = p.second;
+  char current_char = p.first;
+
+  if (current_char == -1) return parser::Parser::token::YYEOF;
+  if (keyword.find(current_char) != std::string::npos)  return current_char;
+  
+  if (current_char == '\"') {
+    process_string(yylval, yylloc);
+    return parser::Parser::token::STRING;
+  }
+
+  return process_multichar_token(current_char, yylval, yylloc);
 }
 
 int Lexer::lex(parser::Parser::value_type* yylval,parser::Parser::location_type* yylloc) {

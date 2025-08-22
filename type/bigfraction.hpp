@@ -19,8 +19,7 @@ class BigFraction {
 
 public:
   BigFraction() : denominator(BigInt(1)) {}
-  BigFraction(const BigFraction &that) : 
-    numerator(that.numerator), denominator(that.denominator) {}
+  BigFraction(const BigFraction &that) = default;
   BigFraction(BigFraction &&that) noexcept : 
     numerator(std::move(that.numerator)), denominator(std::move(that.denominator)) {}
   BigFraction& operator=(const BigFraction &that) {
@@ -37,9 +36,11 @@ public:
     }
     return *this;
   }
-  BigFraction(const BigInt &numerator)
+  ~BigFraction() {}
+  explicit BigFraction(const BigInt &numerator)
       : numerator(numerator), denominator(BigInt(1)) {}
-  BigFraction(std::string &input) {
+
+  explicit BigFraction(std::string &input) {
     std::string::size_type pos = input.find('.');
     if (pos == std::string::npos) {
       numerator = BigInt(input);

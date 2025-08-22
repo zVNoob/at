@@ -8,7 +8,7 @@ namespace string {
 using namespace internal_func;
 using namespace callable;
 using namespace object;
-std::string String_sourcename = __FILE__;
+const std::string String_sourcename = __FILE__;
 
 arg_list on_add(arg_list args) {
   return {

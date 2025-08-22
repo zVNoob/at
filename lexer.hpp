@@ -26,7 +26,8 @@ namespace lexer {
   private:
     std::pair<char, parser::position> get_char();
     int pure_lex(parser::Parser::value_type* yylval,parser::Parser::location_type* yylloc);
-
+    void process_string(parser::Parser::value_type* yylval,parser::Parser::location_type* yylloc);
+    int process_multichar_token(char current_char,parser::Parser::value_type* yylval,parser::Parser::location_type* yylloc);
   };
 
   class StreamLexer : public Lexer {
