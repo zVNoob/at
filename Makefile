@@ -4,4 +4,4 @@ bison:
 	bison parser.y -o parser.cpp -Wcounterexample
 
 compile:
-	g++ *.cpp objects/*.cpp -o main -lgmp -g
+	g++ *.cpp objects/*.cpp -o main -std=c++20 -lgmp -g

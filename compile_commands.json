@@ -1,0 +1,142 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-c",
+      "-std=c++20",
+      "-g",
+      "-o",
+      "main",
+      "error.cpp"
+    ],
+    "directory": "/home/may/at",
+    "file": "/home/may/at/error.cpp",
+    "output": "/home/may/at/main"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-c",
+      "-std=c++20",
+      "-g",
+      "-o",
+      "main",
+      "lexer.cpp"
+    ],
+    "directory": "/home/may/at",
+    "file": "/home/may/at/lexer.cpp",
+    "output": "/home/may/at/main"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-c",
+      "-std=c++20",
+      "-g",
+      "-o",
+      "main",
+      "main.cpp"
+    ],
+    "directory": "/home/may/at",
+    "file": "/home/may/at/main.cpp",
+    "output": "/home/may/at/main"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-c",
+      "-std=c++20",
+      "-g",
+      "-o",
+      "main",
+      "parser.cpp"
+    ],
+    "directory": "/home/may/at",
+    "file": "/home/may/at/parser.cpp",
+    "output": "/home/may/at/main"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-c",
+      "-std=c++20",
+      "-g",
+      "-o",
+      "main",
+      "parser_helper.cpp"
+    ],
+    "directory": "/home/may/at",
+    "file": "/home/may/at/parser_helper.cpp",
+    "output": "/home/may/at/main"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-c",
+      "-std=c++20",
+      "-g",
+      "-o",
+      "main",
+      "objects/callable.cpp"
+    ],
+    "directory": "/home/may/at",
+    "file": "/home/may/at/objects/callable.cpp",
+    "output": "/home/may/at/main"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-c",
+      "-std=c++20",
+      "-g",
+      "-o",
+      "main",
+      "objects/integer.cpp"
+    ],
+    "directory": "/home/may/at",
+    "file": "/home/may/at/objects/integer.cpp",
+    "output": "/home/may/at/main"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-c",
+      "-std=c++20",
+      "-g",
+      "-o",
+      "main",
+      "objects/internal_func.cpp"
+    ],
+    "directory": "/home/may/at",
+    "file": "/home/may/at/objects/internal_func.cpp",
+    "output": "/home/may/at/main"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-c",
+      "-std=c++20",
+      "-g",
+      "-o",
+      "main",
+      "objects/string.cpp"
+    ],
+    "directory": "/home/may/at",
+    "file": "/home/may/at/objects/string.cpp",
+    "output": "/home/may/at/main"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-c",
+      "-std=c++20",
+      "-g",
+      "-o",
+      "main",
+      "objects/type.cpp"
+    ],
+    "directory": "/home/may/at",
+    "file": "/home/may/at/objects/type.cpp",
+    "output": "/home/may/at/main"
+  }
+]

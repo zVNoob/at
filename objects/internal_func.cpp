@@ -14,10 +14,12 @@ using namespace type;
       throw e;
     } 
   }
-  InternalFunction::InternalFunction(std::function<arg_list(arg_list)> func, std::string& file,int line) : 
+  InternalFunction::InternalFunction(std::function<arg_list(arg_list)> func, std::source_location loc) : 
     func(std::move(func)),
-    Callable(parser::location(&file,line)) {
-  }
+    Callable(parser::location(0,loc.line(),loc.column())) {
+      this->source_name = loc.file_name();
+      this->loc = parser::location(&this->source_name,loc.line(),loc.column());
+    }
   bool InternalFunction::operator==(const Object* that) const {
     if (typeid(*that) != typeid(*this)) return false;
     auto _that = static_cast<const InternalFunction*>(that);

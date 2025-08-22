@@ -2,7 +2,6 @@
 #include "callable.hpp"
 #include "type.hpp"
 #include "internal_func.hpp"
-
 #include <memory>
 
 namespace string {

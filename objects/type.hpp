@@ -14,5 +14,4 @@ public:
   bool operator==(const Object* that) const override;
   const std::string to_string() const override;
 };
-
 }

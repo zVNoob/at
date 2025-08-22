@@ -4,13 +4,13 @@
 #include "internal_func.hpp"
 #include "type.hpp"
 #include <sstream>
-
+#include <source_location>
 
 namespace integer {
 using namespace object;
 using namespace internal_func;
 using namespace callable;
-std::string Integer_sourcename = __FILE__;
+const std::string Integer_source = __FILE__;
 
 arg_list on_add(arg_list args) {
   if (args.size() == 1) return {
@@ -24,12 +24,12 @@ arg_list on_add(arg_list args) {
 
 std::shared_ptr<type::Type> Get_Integer_type() {
   static std::shared_ptr<type::Type> type = 
-    std::make_shared<type::Type>(parser::location(&Integer_sourcename,__LINE__),"Integer");
+    std::make_shared<type::Type>(parser::location(&Integer_source,__LINE__),"Integer");
   static bool init = false;
   if (init) return type;
   init = true;
   {
-    auto func_obj = std::make_shared<InternalFunction>(on_add,Integer_sourcename,__LINE__);
+    auto func_obj = std::make_shared<InternalFunction>(on_add);
     func_obj->push_arg_types({Get_Integer_type(),Get_Integer_type()});
     func_obj->push_arg_types({Get_Integer_type()});
     type->members["+"] = func_obj;
