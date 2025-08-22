@@ -7,7 +7,7 @@ namespace type {
     for (auto& item : members) {
       auto that_obj = _that->members.find(item.first);
       if (that_obj == _that->members.end()) return false;
-      if (*(that_obj->second) != item.second) return false;
+      if (*(that_obj->second.get()) != item.second.get()) return false;
     }
     return true;
   }

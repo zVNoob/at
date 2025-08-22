@@ -5,6 +5,7 @@
 #include "objects/object.hpp"
 #include "parser.hpp"
 #include <string>
+#include <memory>
 
 namespace error {
 class ErrorReporter {
@@ -31,7 +32,7 @@ public:
 
 class unsupported_operator : public eval_error {
 public:
-  unsupported_operator(object::Object* obj, std::string op) : 
+  unsupported_operator(std::shared_ptr<object::Object> obj, std::string op) : 
     eval_error(obj->to_string() + ": unsupported operator: " + op, obj->loc) {}
 };
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "object.hpp"
+#include <memory>
 
 namespace string {
 using namespace object;
@@ -11,5 +12,5 @@ public:
   const std::string to_string() const override;
   bool operator==(const Object* that) const override;
 };
-type::Type* Get_String_type();
+std::shared_ptr<type::Type> Get_String_type();
 }

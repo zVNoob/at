@@ -17,6 +17,7 @@
 %code requires {
 #include "type/bigint.hpp"
 #include "type/bigfraction.hpp"
+#include <memory>
 #define yylex lexer->lex
 namespace lexer {class Lexer;}
 namespace error {class ErrorReporter;}
@@ -37,6 +38,7 @@ namespace object {class Object;}
 #include "objects/string.hpp"
 
 #include <iostream>
+#include <memory>
 %}
 
 %token <BigInt> INTEGER
@@ -45,7 +47,7 @@ namespace object {class Object;}
 
 %token <std::string> IDENTIFIER
 
-%nterm <object::Object*> expr
+%nterm <std::shared_ptr<object::Object>> expr
 
 
 
@@ -58,8 +60,8 @@ namespace object {class Object;}
 %%
 
 
-expr: INTEGER { $$ = new integer::Integer($1,@1); }
-    | STRING { $$ = new string::String($1,@1); }
+expr: INTEGER { $$ = std::make_shared<integer::Integer>($1,@1); }
+    | STRING { $$ = std::make_shared<string::String>($1,@1); }
     | expr '+' expr {$$ = exec_binary_op($1, $3, "+"); }
     | expr '-' expr {$$ = exec_binary_op($1, $3, "-"); }
     | expr '*' expr {$$ = exec_binary_op($1, $3, "*"); }
@@ -68,7 +70,7 @@ expr: INTEGER { $$ = new integer::Integer($1,@1); }
     ;
 
 stmt: %empty
-    | expr { std::cout << $1->to_string() << std::endl; delete $1;}
+    | expr { std::cout << $1->to_string() << std::endl;}
     | error
     ;
 

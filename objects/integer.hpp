@@ -12,5 +12,5 @@ class Integer : public Object {
   const std::string to_string() const override;
   bool operator==(const Object* that) const override;
 };
-type::Type* Get_Integer_type();
+std::shared_ptr<type::Type> Get_Integer_type();
 }

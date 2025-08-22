@@ -1,34 +1,30 @@
 #include "string.hpp"
+#include "callable.hpp"
 #include "type.hpp"
 #include "internal_func.hpp"
 
-#include <vector>
+#include <memory>
 #include "../error.hpp"
 
 namespace string {
-using namespace object;
 using namespace internal_func;
 std::string String_sourcename = __FILE__;
 
-std::vector<Object*> on_add(std::vector<Object*> args) {
-  if (!dynamic_cast<String*>(args[0])) {
-    throw error::type_mismatch(args[0]);
-  }
-  if (args.size() == 1) return {new String(static_cast<String*>(args[0])->value,args[0]->loc)};
-  if (!dynamic_cast<String*>(args[1])) {
-    throw error::type_mismatch(args[1]);
-  }
-  return {new String(static_cast<String*>(args[0])->value + 
-                     static_cast<String*>(args[1])->value,args[0]->loc)};
+arg_list on_add(arg_list args) {
+  return {
+    std::make_shared<String>(
+        static_cast<String*>(args[0].get())->value + 
+        static_cast<String*>(args[1].get())->value,
+      args[0]->loc)};
 }
 
 
-type::Type* Get_String_type() {
-  static type::Type* type = new type::Type(parser::location(&String_sourcename,__LINE__),"String");
+std::shared_ptr<type::Type> Get_String_type() {
+  static std::shared_ptr<type::Type> type = 
+    std::make_shared<type::Type>(parser::location(&String_sourcename,__LINE__),"String");
   static bool init = false;
   if (init) return type;
   init = true;
-  type->members["+"] = new InternalFunction(on_add,{Get_String_type(),Get_String_type()},String_sourcename,__LINE__);
   return type;
 }
 

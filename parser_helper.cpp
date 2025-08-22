@@ -4,16 +4,18 @@
 #include "objects/callable.hpp"
 #include "objects/type.hpp"
 namespace parser {
-  object::Object* exec_binary_op(object::Object* lhs, object::Object* rhs, std::string op) {
+  std::shared_ptr<object::Object> exec_binary_op(std::shared_ptr<object::Object> lhs, 
+                                                 std::shared_ptr<object::Object> rhs, 
+                                                 std::string op) {
     if (lhs->type == nullptr) throw error::unsupported_operator(lhs,op);
-    object::Object* op_obj = lhs->type->members[op];
+    object::Object* op_obj = lhs->type->members[op].get();
     if (op_obj == nullptr) throw error::unsupported_operator(lhs,op);
     if (dynamic_cast<callable::Callable*>(op_obj) == nullptr) throw error::unsupported_operator(lhs,op); 
     return static_cast<callable::Callable*>(op_obj)->on_call({lhs,rhs})[0];
   }
-  object::Object* exec_unary_op(object::Object* rhs, std::string op) {
+  std::shared_ptr<object::Object> exec_unary_op(std::shared_ptr<object::Object> rhs, std::string op) {
     if (rhs->type == nullptr) throw error::unsupported_operator(rhs,op);
-    object::Object* op_obj = rhs->type->members[op];
+    object::Object* op_obj = rhs->type->members[op].get();
     if (op_obj == nullptr) throw error::unsupported_operator(rhs,op);
     if (dynamic_cast<callable::Callable*>(op_obj) == nullptr) throw error::unsupported_operator(rhs,op); 
     return static_cast<callable::Callable*>(op_obj)->on_call({rhs})[0];

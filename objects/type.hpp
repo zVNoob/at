@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <memory>
 #include <string>
 #include "object.hpp"
 
@@ -9,7 +10,7 @@ using namespace object;
 class Type : public Object {
   std::string name;
 public:
-  std::map<std::string, Object*> members;
+  std::map<std::string, std::shared_ptr<Object>> members;
   Type(parser::location loc,std::string name);
   bool operator==(const Object* that) const override;
   const std::string to_string() const override;
