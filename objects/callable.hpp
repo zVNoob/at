@@ -6,13 +6,11 @@
 #include "object.hpp"
 
 namespace callable {
-using namespace object;
-using namespace type;
-typedef std::vector<std::shared_ptr<Object>> arg_list;
-class Callable : public Object {
+typedef std::vector<std::shared_ptr<object::Object>> arg_list;
+class Callable : public object::Object {
 public:
   Callable(parser::location loc);
-  void push_arg_types(std::vector<std::shared_ptr<Type>> arg_types);
+  void push_arg_types(std::vector<std::shared_ptr<type::Type>> arg_types);
   virtual arg_list on_call(arg_list args) = 0;
 };
 }

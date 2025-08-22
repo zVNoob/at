@@ -3,6 +3,8 @@
 #include "callable.hpp"
 
 namespace internal_func {
+using namespace callable;
+using namespace type;
   arg_list InternalFunction::on_call(arg_list args) {
     try {
       return func(args);

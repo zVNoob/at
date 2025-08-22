@@ -6,8 +6,7 @@
 #include "object.hpp"
 
 namespace type {
-using namespace object;
-class Type : public Object {
+class Type : public object::Object {
   std::string name;
 public:
   std::map<std::string, std::shared_ptr<Object>> members;

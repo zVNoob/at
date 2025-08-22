@@ -4,8 +4,7 @@
 #include <memory>
 
 namespace string {
-using namespace object;
-class String : public Object {
+class String : public object::Object {
 public:
   std::string value;
   String(std::string value, parser::location loc);

@@ -4,8 +4,7 @@
 #include "../type/bigint.hpp"
 
 namespace integer {
-using namespace object;
-class Integer : public Object {
+class Integer : public object::Object {
   public:
   BigInt value;
   Integer(BigInt value,parser::location loc);

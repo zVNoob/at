@@ -1,6 +1,7 @@
 #include "type.hpp"
 
 namespace type {
+using namespace object;
   Type::Type(parser::location loc,std::string name) : Object(loc), name(name) {}
   bool Type::operator==(const Object* that) const {
     auto _that = static_cast<const Type*>(that);

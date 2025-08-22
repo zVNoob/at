@@ -7,7 +7,9 @@
 
 
 namespace integer {
+using namespace object;
 using namespace internal_func;
+using namespace callable;
 std::string Integer_sourcename = __FILE__;
 
 arg_list on_add(arg_list args) {

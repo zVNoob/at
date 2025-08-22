@@ -2,7 +2,8 @@
 
 #include "error.hpp"
 #include "objects/callable.hpp"
-#include "objects/type.hpp"
+#include "objects/type.hpp" // IWYU pragma: keep
+
 namespace parser {
   std::shared_ptr<object::Object> exec_binary_op(std::shared_ptr<object::Object> lhs, 
                                                  std::shared_ptr<object::Object> rhs, 
