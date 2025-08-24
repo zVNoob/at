@@ -4,13 +4,14 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <exception>
 
 class BigFraction {
   BigInt numerator;
   BigInt denominator;
   void reduce() {
     if (denominator == BigInt(0)) {
-      throw std::runtime_error("division by zero");
+      throw std::runtime_error("divide by zero");
     }
     BigInt g = gcd(numerator, denominator);
     numerator = numerator / g;

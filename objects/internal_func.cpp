@@ -17,6 +17,16 @@ using namespace type;
   InternalFunction::InternalFunction(std::function<arg_list(arg_list)> func, std::source_location loc) : 
     func(std::move(func)), source_name(loc.file_name()),
     Callable(parser::location(0,loc.line(),loc.column())) {
+      sloc = loc;
       this->loc = parser::location(&this->source_name,loc.line(),loc.column());
-    }
+  }
+
+  std::string InternalFunction::to_string() const {
+    return std::string(sloc.function_name())
+            + "(" + 
+              sloc.file_name() + ":" + 
+              std::to_string(sloc.line()) + ":" + std::to_string(sloc.column()) + 
+            ")";
+  }
+
 }

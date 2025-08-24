@@ -3,3 +3,4 @@ parser.cpp
 location.hh
 main
 Session.vim
+.build/

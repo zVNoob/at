@@ -36,6 +36,7 @@ namespace object {class Object;}
 
 #include "objects/integer.hpp"
 #include "objects/string.hpp"
+#include "objects/fraction.hpp"
 
 #include <iostream>
 #include <memory>
@@ -62,9 +63,12 @@ namespace object {class Object;}
 
 expr: INTEGER { $$ = std::make_shared<integer::Integer>($1,@1); }
     | STRING { $$ = std::make_shared<string::String>($1,@1); }
+    | FRACTION { $$ = std::make_shared<fraction::Fraction>($1,@1); }
     | expr '+' expr {$$ = exec_binary_op($1, $3, "+"); }
     | expr '-' expr {$$ = exec_binary_op($1, $3, "-"); }
     | expr '*' expr {$$ = exec_binary_op($1, $3, "*"); }
+    | expr '/' expr {$$ = exec_binary_op($1, $3, "/"); }
+    | expr '%' expr {$$ = exec_binary_op($1, $3, "%"); }
     | '+' expr {$$ = exec_unary_op($2, "+"); }
     | '-' expr {$$ = exec_unary_op($2, "-"); }
     ;

@@ -6,7 +6,6 @@
 
 using namespace std;
 
-
 int main() {
   error::StreamErrorReporter error_reporter(std::cerr);
   lexer::StreamLexer lexer(std::cin, &error_reporter);
