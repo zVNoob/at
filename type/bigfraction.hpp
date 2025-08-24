@@ -10,9 +10,6 @@ class BigFraction {
   BigInt numerator;
   BigInt denominator;
   void reduce() {
-    if (denominator == BigInt(0)) {
-      throw std::runtime_error("divide by zero");
-    }
     BigInt g = gcd(numerator, denominator);
     numerator = numerator / g;
     denominator = denominator / g;
@@ -21,19 +18,10 @@ class BigFraction {
 public:
   BigFraction() : denominator(BigInt(1)) {}
   BigFraction(const BigFraction &that) = default;
-  BigFraction(BigFraction &&that) noexcept : 
-    numerator(std::move(that.numerator)), denominator(std::move(that.denominator)) {}
   BigFraction& operator=(const BigFraction &that) {
     if (this != &that) {
       numerator = that.numerator;
       denominator = that.denominator;
-    }
-    return *this;
-  }
-  BigFraction& operator=(BigFraction &&that) noexcept {
-    if (this != &that) {
-      numerator = std::move(that.numerator);
-      denominator = std::move(that.denominator);
     }
     return *this;
   }

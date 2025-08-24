@@ -92,7 +92,7 @@ std::string Fraction::to_string() const {
   return ss.str();
 }
 
-Fraction::Fraction(BigFraction value, parser::location loc) : value(value), Object(loc) {
+Fraction::Fraction(BigFraction value, parser::location loc) : Object(loc) , value(value) {
   type = Get_Fraction_type();
 }
 
