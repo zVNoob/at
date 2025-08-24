@@ -27,7 +27,7 @@ callable::arg_list TypedFunction::on_call(callable::arg_list args) {
 
 void TypedFunction::push_func(std::shared_ptr<Callable> func,
                               const std::vector<std::shared_ptr<type::Type>>& arg_types) {
-  func_lookup_table.emplace_back(make_pair(arg_types,func));
+  func_lookup_table.emplace_back(arg_types,func); 
 }
 
 std::string TypedFunction::to_string() const {
