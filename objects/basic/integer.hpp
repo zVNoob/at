@@ -1,7 +1,7 @@
 #pragma once
 
 #include "object.hpp"
-#include "../type/bigint.hpp"
+#include "bigint.hpp"
 
 namespace integer {
 class Integer : public object::Object {

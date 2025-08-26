@@ -1,7 +1,7 @@
 #pragma once
 
 #include "object.hpp"
-#include "../type/bigfraction.hpp"
+#include "bigfraction.hpp"
 
 namespace fraction {
   class Fraction : public object::Object {

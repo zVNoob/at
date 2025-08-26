@@ -1,5 +1,6 @@
 #include "typed_func.hpp"
 
+#include <format>
 #include <memory>
 #include "type.hpp"
 #include "../error.hpp"
@@ -31,6 +32,23 @@ void TypedFunction::push_func(std::shared_ptr<Callable> func,
 }
 
 std::string TypedFunction::to_string() const {
-  return "TypedFunction";
+  std::string ret;
+  for (auto& [farg,func] : func_lookup_table) {
+    ret += func->to_string() + "(";
+    for (auto& t : farg) {
+      ret += t->to_string();
+      ret += ", ";
+    }
+    if (farg.size()) {
+      ret.pop_back();
+      ret.pop_back();
+    }
+    ret += ")\n";
+  }
+  return std::format("{}@[{}]",
+                     return_type->to_string(),
+                     ret
+                     );
 }
+
 }

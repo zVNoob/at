@@ -2,7 +2,7 @@
 
 #include "lexer.hpp"
 #include "location.hh"
-#include "objects/object.hpp"
+#include "object.hpp"
 #include "parser.hpp"
 #include <string>
 #include <memory>

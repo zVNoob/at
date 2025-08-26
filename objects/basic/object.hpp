@@ -2,7 +2,7 @@
 
 #include <string>
 #include <memory>
-#include "../location.hh"
+#include "location.hh"
 
 namespace type { class Type; }
 namespace object {

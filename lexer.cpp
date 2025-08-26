@@ -3,9 +3,13 @@
 #include "error.hpp"
 #include "parser.hpp"
 
-#include "type/bigint.hpp"
-#include "type/bigfraction.hpp"
+#include "bigint.hpp"
+#include "bigfraction.hpp"
+
+#include "variable.hpp"
+
 #include <cstdio>
+#include <memory>
 
 namespace lexer {
 
@@ -28,7 +32,7 @@ std::pair<char, parser::position> Lexer::get_char() {
 
 const std::string keyword = "!@#$%^&*()-=+[]{};:,<>/?~`";
 
-void Lexer::process_string(parser::Parser::value_type* yylval,parser::Parser::location_type* yylloc) {
+std::string Lexer::process_string(parser::Parser::value_type* yylval,parser::Parser::location_type* yylloc) {
   std::string s = "";
   std::pair<char, parser::position> next_char;
   while ((next_char = get_char()).first != '\0' && next_char.first != '\"') {
@@ -51,9 +55,10 @@ void Lexer::process_string(parser::Parser::value_type* yylval,parser::Parser::lo
   }
   yylval->emplace<std::string>(s);
   yylloc->end = next_char.second;
+  return std::move(s);
 }
 
-int Lexer::process_multichar_token(char current_char,
+std::pair<int, std::string> Lexer::process_multichar_token(char current_char,
                                    parser::Parser::value_type* yylval,
                                    parser::Parser::location_type* yylloc) {
   auto s = std::string(1, current_char);
@@ -79,11 +84,10 @@ int Lexer::process_multichar_token(char current_char,
   while (s.back() == ' ' || s.back() == '\n' || s.back() == '\t') s.pop_back();
   if (token_type == parser::Parser::token::INTEGER) yylval->emplace<BigInt>(s);
   if (token_type == parser::Parser::token::FRACTION) yylval->emplace<BigFraction>(s);
-  if (token_type == parser::Parser::token::IDENTIFIER) yylval->emplace<std::string>(s);
-  return token_type;
+  return {token_type,s};
 }
 
-int Lexer::pure_lex(parser::Parser::value_type* yylval,parser::Parser::location_type* yylloc) {
+std::pair<int,std::string> Lexer::pure_lex(parser::Parser::value_type* yylval,parser::Parser::location_type* yylloc) {
   std::pair<char, parser::position> p = {0, yylloc->end};
   if (pending_char.first) {
     p = pending_char;
@@ -98,19 +102,26 @@ int Lexer::pure_lex(parser::Parser::value_type* yylval,parser::Parser::location_
   yylloc->end = p.second;
   char current_char = p.first;
 
-  if (current_char == -1) return parser::Parser::token::YYEOF;
-  if (keyword.find(current_char) != std::string::npos)  return current_char;
+  if (current_char == -1) return {parser::Parser::token::YYEOF,""};
+  if (keyword.find(current_char) != std::string::npos)  return {current_char,std::string(1, current_char)};
   
-  if (current_char == '\"') {
-    process_string(yylval, yylloc);
-    return parser::Parser::token::STRING;
-  }
+  if (current_char == '\"')
+    return {parser::Parser::token::STRING,process_string(yylval, yylloc)};
 
   return process_multichar_token(current_char, yylval, yylloc);
 }
 
 int Lexer::lex(parser::Parser::value_type* yylval,parser::Parser::location_type* yylloc) {
-  return pure_lex(yylval,yylloc);
+  auto [token,s] = pure_lex(yylval,yylloc);
+  if (token == parser::Parser::token::IDENTIFIER) {
+    auto value = scope->get_member(s).first;
+    if (value) {
+      yylval->emplace<std::shared_ptr<variable::Variable>>(std::move(value));
+      return parser::Parser::token::VARIABLE;
+    }
+  }
+  if (token == parser::Parser::token::IDENTIFIER) yylval->emplace<std::string>(s);
+  return token;
 }
 
 char StreamLexer::next() {

@@ -1,8 +1,10 @@
 #include "parser_helper.hpp"
 
+#include "parser.hpp"
+
 #include "error.hpp"
-#include "objects/callable.hpp"
-#include "objects/type.hpp" // IWYU pragma: keep
+#include "callable.hpp"
+#include "type.hpp" // IWYU pragma: keep
 
 namespace parser {
   std::shared_ptr<object::Object> exec_binary_op(std::shared_ptr<object::Object> lhs, 
@@ -21,5 +23,8 @@ namespace parser {
     if (op_obj == nullptr) throw error::unsupported_operator(rhs,op);
     if (dynamic_cast<callable::Callable*>(op_obj) == nullptr) throw error::unsupported_operator(rhs,op); 
     return static_cast<callable::Callable*>(op_obj)->on_call({rhs})[0];
+  }
+  void exec_declare(const std::string& name, std::shared_ptr<object::Object> obj,lexer::Lexer* lexer) {
+    lexer->scope->add_member(name, obj);
   }
 }
