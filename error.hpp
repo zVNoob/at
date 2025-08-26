@@ -12,7 +12,9 @@ class ErrorReporter {
 public:
   int tabstop = 4;
   virtual void report(lexer::Lexer* lexer,parser::location loc,const std::string& msg) = 0;
-  virtual void orphan_return(const std::vector<std::shared_ptr<object::Object>>& obj) {};
+  virtual void orphan_return(const std::vector<std::shared_ptr<object::Object>>& obj) {
+    // do nothing
+  };
 };
 class StreamErrorReporter : public ErrorReporter {
 public:

@@ -54,7 +54,7 @@ std::string Lexer::process_string(parser::Parser::value_type* yylval,parser::Par
   }
   yylval->emplace<std::string>(s);
   yylloc->end = next_char.second;
-  return std::move(s);
+  return s;
 }
 
 std::pair<int, std::string> Lexer::process_multichar_token(char current_char,

@@ -11,7 +11,7 @@ class Scope : public object::Object {
 public:
   std::shared_ptr<Scope> parent;
   std::map<std::string, std::shared_ptr<object::Object>> members;
-  void add_member(std::string name, std::shared_ptr<object::Object> obj);
+  void add_member(const std::string& name, std::shared_ptr<object::Object> obj);
   std::pair<std::shared_ptr<variable::Variable>, bool> get_member(std::string name);
   explicit Scope(std::shared_ptr<Scope> parent);
   explicit Scope(parser::location loc);

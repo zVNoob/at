@@ -7,7 +7,7 @@
 
 namespace scope {
 using namespace object;
-void Scope::add_member(std::string name, std::shared_ptr<object::Object> obj) {
+void Scope::add_member(const std::string& name, std::shared_ptr<object::Object> obj) {
   members[name] = obj;
 }
 
