@@ -25,8 +25,7 @@ public:
     Lexer(const std::string& filename, error::ErrorReporter* error_reporter) : 
     filename(filename), error_reporter(error_reporter), 
     scope(std::make_shared<scope::Scope>(parser::location(&filename))) {};
-    virtual int lex(parser::Parser::value_type* yylval,parser::Parser::location_type* yylloc);
-
+    int lex(parser::Parser::value_type* yylval,parser::Parser::location_type* yylloc);
   protected:
     virtual char next() = 0;
   private:

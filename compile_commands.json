@@ -7,15 +7,16 @@
       "-I.",
       "-I./objects",
       "-I./objects/basic",
+      "-I./objects/ast",
       "-I./type",
       "-c",
       "-o",
-      ".build/./objects/callable.o",
-      "objects/callable.cpp"
+      ".build/./error.o",
+      "error.cpp"
     ],
     "directory": "/home/may/at",
-    "file": "/home/may/at/objects/callable.cpp",
-    "output": "/home/may/at/.build/objects/callable.o"
+    "file": "/home/may/at/error.cpp",
+    "output": "/home/may/at/.build/error.o"
   },
   {
     "arguments": [
@@ -25,15 +26,16 @@
       "-I.",
       "-I./objects",
       "-I./objects/basic",
+      "-I./objects/ast",
       "-I./type",
       "-c",
       "-o",
-      ".build/./objects/fraction.o",
-      "objects/fraction.cpp"
+      ".build/./lexer.o",
+      "lexer.cpp"
     ],
     "directory": "/home/may/at",
-    "file": "/home/may/at/objects/fraction.cpp",
-    "output": "/home/may/at/.build/objects/fraction.o"
+    "file": "/home/may/at/lexer.cpp",
+    "output": "/home/may/at/.build/lexer.o"
   },
   {
     "arguments": [
@@ -43,15 +45,16 @@
       "-I.",
       "-I./objects",
       "-I./objects/basic",
+      "-I./objects/ast",
       "-I./type",
       "-c",
       "-o",
-      ".build/./objects/integer.o",
-      "objects/integer.cpp"
+      ".build/./main.o",
+      "main.cpp"
     ],
     "directory": "/home/may/at",
-    "file": "/home/may/at/objects/integer.cpp",
-    "output": "/home/may/at/.build/objects/integer.o"
+    "file": "/home/may/at/main.cpp",
+    "output": "/home/may/at/.build/main.o"
   },
   {
     "arguments": [
@@ -61,15 +64,16 @@
       "-I.",
       "-I./objects",
       "-I./objects/basic",
+      "-I./objects/ast",
       "-I./type",
       "-c",
       "-o",
-      ".build/./objects/internal_func.o",
-      "objects/internal_func.cpp"
+      ".build/./parser.o",
+      "parser.cpp"
     ],
     "directory": "/home/may/at",
-    "file": "/home/may/at/objects/internal_func.cpp",
-    "output": "/home/may/at/.build/objects/internal_func.o"
+    "file": "/home/may/at/parser.cpp",
+    "output": "/home/may/at/.build/parser.o"
   },
   {
     "arguments": [
@@ -79,15 +83,16 @@
       "-I.",
       "-I./objects",
       "-I./objects/basic",
+      "-I./objects/ast",
       "-I./type",
       "-c",
       "-o",
-      ".build/./objects/scope.o",
-      "objects/scope.cpp"
+      ".build/./parser_helper.o",
+      "parser_helper.cpp"
     ],
     "directory": "/home/may/at",
-    "file": "/home/may/at/objects/scope.cpp",
-    "output": "/home/may/at/.build/objects/scope.o"
+    "file": "/home/may/at/parser_helper.cpp",
+    "output": "/home/may/at/.build/parser_helper.o"
   },
   {
     "arguments": [
@@ -97,15 +102,16 @@
       "-I.",
       "-I./objects",
       "-I./objects/basic",
+      "-I./objects/ast",
       "-I./type",
       "-c",
       "-o",
-      ".build/./objects/string.o",
-      "objects/string.cpp"
+      ".build/./objects/basic/array.o",
+      "objects/basic/array.cpp"
     ],
     "directory": "/home/may/at",
-    "file": "/home/may/at/objects/string.cpp",
-    "output": "/home/may/at/.build/objects/string.o"
+    "file": "/home/may/at/objects/basic/array.cpp",
+    "output": "/home/may/at/.build/objects/basic/array.o"
   },
   {
     "arguments": [
@@ -115,15 +121,16 @@
       "-I.",
       "-I./objects",
       "-I./objects/basic",
+      "-I./objects/ast",
       "-I./type",
       "-c",
       "-o",
-      ".build/./objects/type.o",
-      "objects/type.cpp"
+      ".build/./objects/basic/callable.o",
+      "objects/basic/callable.cpp"
     ],
     "directory": "/home/may/at",
-    "file": "/home/may/at/objects/type.cpp",
-    "output": "/home/may/at/.build/objects/type.o"
+    "file": "/home/may/at/objects/basic/callable.cpp",
+    "output": "/home/may/at/.build/objects/basic/callable.o"
   },
   {
     "arguments": [
@@ -133,14 +140,129 @@
       "-I.",
       "-I./objects",
       "-I./objects/basic",
+      "-I./objects/ast",
       "-I./type",
       "-c",
       "-o",
-      ".build/./objects/typed_func.o",
-      "objects/typed_func.cpp"
+      ".build/./objects/basic/fraction.o",
+      "objects/basic/fraction.cpp"
     ],
     "directory": "/home/may/at",
-    "file": "/home/may/at/objects/typed_func.cpp",
-    "output": "/home/may/at/.build/objects/typed_func.o"
+    "file": "/home/may/at/objects/basic/fraction.cpp",
+    "output": "/home/may/at/.build/objects/basic/fraction.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-std=c++20",
+      "-g",
+      "-I.",
+      "-I./objects",
+      "-I./objects/basic",
+      "-I./objects/ast",
+      "-I./type",
+      "-c",
+      "-o",
+      ".build/./objects/basic/integer.o",
+      "objects/basic/integer.cpp"
+    ],
+    "directory": "/home/may/at",
+    "file": "/home/may/at/objects/basic/integer.cpp",
+    "output": "/home/may/at/.build/objects/basic/integer.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-std=c++20",
+      "-g",
+      "-I.",
+      "-I./objects",
+      "-I./objects/basic",
+      "-I./objects/ast",
+      "-I./type",
+      "-c",
+      "-o",
+      ".build/./objects/basic/internal_func.o",
+      "objects/basic/internal_func.cpp"
+    ],
+    "directory": "/home/may/at",
+    "file": "/home/may/at/objects/basic/internal_func.cpp",
+    "output": "/home/may/at/.build/objects/basic/internal_func.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-std=c++20",
+      "-g",
+      "-I.",
+      "-I./objects",
+      "-I./objects/basic",
+      "-I./objects/ast",
+      "-I./type",
+      "-c",
+      "-o",
+      ".build/./objects/basic/scope.o",
+      "objects/basic/scope.cpp"
+    ],
+    "directory": "/home/may/at",
+    "file": "/home/may/at/objects/basic/scope.cpp",
+    "output": "/home/may/at/.build/objects/basic/scope.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-std=c++20",
+      "-g",
+      "-I.",
+      "-I./objects",
+      "-I./objects/basic",
+      "-I./objects/ast",
+      "-I./type",
+      "-c",
+      "-o",
+      ".build/./objects/basic/string.o",
+      "objects/basic/string.cpp"
+    ],
+    "directory": "/home/may/at",
+    "file": "/home/may/at/objects/basic/string.cpp",
+    "output": "/home/may/at/.build/objects/basic/string.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-std=c++20",
+      "-g",
+      "-I.",
+      "-I./objects",
+      "-I./objects/basic",
+      "-I./objects/ast",
+      "-I./type",
+      "-c",
+      "-o",
+      ".build/./objects/basic/type.o",
+      "objects/basic/type.cpp"
+    ],
+    "directory": "/home/may/at",
+    "file": "/home/may/at/objects/basic/type.cpp",
+    "output": "/home/may/at/.build/objects/basic/type.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-std=c++20",
+      "-g",
+      "-I.",
+      "-I./objects",
+      "-I./objects/basic",
+      "-I./objects/ast",
+      "-I./type",
+      "-c",
+      "-o",
+      ".build/./objects/basic/typed_func.o",
+      "objects/basic/typed_func.cpp"
+    ],
+    "directory": "/home/may/at",
+    "file": "/home/may/at/objects/basic/typed_func.cpp",
+    "output": "/home/may/at/.build/objects/basic/typed_func.o"
   }
 ]

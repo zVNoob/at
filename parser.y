@@ -90,7 +90,7 @@ expr_list: unknown_expr { std::vector<std::shared_ptr<object::Object>> v; v.empl
          ;
 
 stmt: %empty
-    | expr_list { for( auto& s:$1) std::cout << s->to_string() << std::endl;}
+    | expr_list { if (!lexer->scope->parent) err_rp->orphan_return($1);}
     | IDENTIFIER ':' expr { exec_declare($1, $3, lexer);}
     | VARIABLE ':' expr { exec_declare($1->name, $3, lexer);}
     | error

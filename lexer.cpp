@@ -8,7 +8,6 @@
 
 #include "variable.hpp"
 
-#include <cstdio>
 #include <memory>
 
 namespace lexer {
@@ -130,5 +129,6 @@ char StreamLexer::next() {
   input.get(c);
   return c;
 }
+
 
 }

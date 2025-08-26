@@ -12,12 +12,14 @@ class ErrorReporter {
 public:
   int tabstop = 4;
   virtual void report(lexer::Lexer* lexer,parser::location loc,const std::string& msg) = 0;
+  virtual void orphan_return(const std::vector<std::shared_ptr<object::Object>>& obj) {};
 };
 class StreamErrorReporter : public ErrorReporter {
 public:
   std::ostream &output;
   explicit StreamErrorReporter(std::ostream &output) : output(output) {}
   void report(lexer::Lexer* lexer,parser::location loc,const std::string& msg) override;
+  void orphan_return(const std::vector<std::shared_ptr<object::Object>>& obj) override;
 };
 
 class eval_error : public parser::Parser::syntax_error {
@@ -35,6 +37,5 @@ public:
   explicit unsupported_operator(std::shared_ptr<object::Object> obj, std::string op) : 
     eval_error(obj->to_string() + ": unsupported operator: " + op, obj->loc) {}
 };
-
 
 }
