@@ -3,6 +3,8 @@
 #include "object.hpp"
 #include "bigint.hpp"
 
+#include <memory>
+
 namespace integer {
 class Integer : public object::Object {
   public:

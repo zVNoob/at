@@ -4,6 +4,8 @@
 #include "typed_func.hpp"
 #include "internal_func.hpp"
 #include "type.hpp"
+#include "variable.hpp"
+#include "error.hpp"
 #include <memory>
 #include <sstream>
 
@@ -54,6 +56,13 @@ arg_list on_mod(arg_list args) {
       args[0]->loc)};
 }
 
+arg_list on_assign(arg_list args) {
+  if (!dynamic_cast<variable::Variable*>(args[0].get()))
+    throw error::eval_error("Invalid assignment",args[0]->loc);
+  static_cast<variable::Variable*>(args[0].get())->value = args[1];
+  return {args[0]};
+}
+
 std::shared_ptr<type::Type> Get_Integer_type() {
   static std::shared_ptr<type::Type> type = 
     std::make_shared<type::Type>(parser::location(&Integer_source,__LINE__),"Integer");
@@ -86,6 +95,11 @@ std::shared_ptr<type::Type> Get_Integer_type() {
     auto func_obj = std::make_shared<TypedFunction>(Get_Integer_type(),parser::location(&Integer_source,__LINE__));
     func_obj->push_func(std::make_shared<InternalFunction>(on_mod),{Get_Integer_type(),Get_Integer_type()});
     type->members["%"] = func_obj;
+  }
+  {
+    auto func_obj = std::make_shared<TypedFunction>(Get_Integer_type(),parser::location(&Integer_source,__LINE__));
+    func_obj->push_func(std::make_shared<InternalFunction>(on_assign),{Get_Integer_type(),Get_Integer_type()});
+    type->members["="] = func_obj;
   }
   return type;
 }

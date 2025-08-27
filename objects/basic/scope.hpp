@@ -10,7 +10,7 @@ namespace scope {
 class Scope : public object::Object {
 public:
   std::shared_ptr<Scope> parent;
-  std::map<std::string, std::shared_ptr<object::Object>> members;
+  std::map<std::string, std::shared_ptr<object::Object>, std::less<>> members;
   void add_member(const std::string& name, std::shared_ptr<object::Object> obj);
   std::pair<std::shared_ptr<variable::Variable>, bool> get_member(std::string name);
   explicit Scope(std::shared_ptr<Scope> parent);

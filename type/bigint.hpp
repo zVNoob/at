@@ -11,9 +11,7 @@ public:
   BigInt() { mpz_init(value); }
   BigInt(const BigInt &that) { mpz_init_set(value, that.value); }
   BigInt &operator=(const BigInt &that) {
-    if (this != &that) {
-      mpz_set(value, that.value);
-    }
+    mpz_set(value, that.value);
     return *this;
   }
 

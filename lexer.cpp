@@ -31,7 +31,7 @@ std::pair<char, parser::position> Lexer::get_char() {
 
 const std::string keyword = "!@#$%^&*()-=+[]{};:,<>/?~`";
 
-std::string Lexer::process_string(parser::Parser::value_type* yylval,parser::Parser::location_type* yylloc) {
+void Lexer::process_string(parser::Parser::value_type* yylval,parser::Parser::location_type* yylloc) {
   std::string s = "";
   std::pair<char, parser::position> next_char;
   while ((next_char = get_char()).first != '\0' && next_char.first != '\"') {
@@ -54,10 +54,9 @@ std::string Lexer::process_string(parser::Parser::value_type* yylval,parser::Par
   }
   yylval->emplace<std::string>(s);
   yylloc->end = next_char.second;
-  return s;
 }
 
-std::pair<int, std::string> Lexer::process_multichar_token(char current_char,
+int Lexer::process_multichar_token(char current_char,
                                    parser::Parser::value_type* yylval,
                                    parser::Parser::location_type* yylloc) {
   auto s = std::string(1, current_char);
@@ -83,10 +82,11 @@ std::pair<int, std::string> Lexer::process_multichar_token(char current_char,
   while (s.back() == ' ' || s.back() == '\n' || s.back() == '\t') s.pop_back();
   if (token_type == parser::Parser::token::INTEGER) yylval->emplace<BigInt>(s);
   if (token_type == parser::Parser::token::FRACTION) yylval->emplace<BigFraction>(s);
-  return {token_type,s};
+  if (token_type == parser::Parser::token::IDENTIFIER) yylval->emplace<std::string>(s);
+  return token_type;
 }
 
-std::pair<int,std::string> Lexer::pure_lex(parser::Parser::value_type* yylval,parser::Parser::location_type* yylloc) {
+int Lexer::pure_lex(parser::Parser::value_type* yylval,parser::Parser::location_type* yylloc) {
   std::pair<char, parser::position> p = {0, yylloc->end};
   if (pending_char.first) {
     p = pending_char;
@@ -101,25 +101,99 @@ std::pair<int,std::string> Lexer::pure_lex(parser::Parser::value_type* yylval,pa
   yylloc->end = p.second;
   char current_char = p.first;
 
-  if (current_char == -1) return {parser::Parser::token::YYEOF,""};
-  if (keyword.find(current_char) != std::string::npos)  return {current_char,std::string(1, current_char)};
+  if (current_char == -1) return parser::Parser::token::YYEOF;
+  if (keyword.find(current_char) != std::string::npos)  return current_char;
   
-  if (current_char == '\"')
-    return {parser::Parser::token::STRING,process_string(yylval, yylloc)};
+  if (current_char == '\"') {
+    process_string(yylval,yylloc);
+    return parser::Parser::token::STRING;
+  }
 
   return process_multichar_token(current_char, yylval, yylloc);
 }
 
-int Lexer::lex(parser::Parser::value_type* yylval,parser::Parser::location_type* yylloc) {
-  auto [token,s] = pure_lex(yylval,yylloc);
+int Lexer::scope_lex(parser::Parser::value_type* yylval,parser::Parser::location_type* yylloc) {
+  int token = pure_lex(yylval,yylloc);
   if (token == parser::Parser::token::IDENTIFIER) {
-    auto value = scope->get_member(s).first;
+    auto value = scope->get_member(yylval->as<std::string>()).first;
     if (value) {
+      yylval->destroy<std::string>();
       yylval->emplace<std::shared_ptr<variable::Variable>>(std::move(value));
       return parser::Parser::token::VARIABLE;
     }
   }
-  if (token == parser::Parser::token::IDENTIFIER) yylval->emplace<std::string>(s);
+  return token;
+
+}
+
+int Lexer::lex(parser::Parser::value_type* yylval,parser::Parser::location_type* yylloc) {
+  if (side == -1) if (buffered_token.size()) {
+    auto [str, loc, var] = buffered_token.front();
+    buffered_token.pop_front();
+    if (str[0] == ',') return str[0];
+    if (str[0] == ':' || str[0] == '=') {side = 1; return str[0];}
+    if (is_declare) {
+      yylval->emplace<std::string>(str);
+      return parser::Parser::token::IDENTIFIER;
+    }
+    if (!var) {
+      buffered_token.clear();
+      throw error::eval_error("Invalid declaration, expected variable, found identifier",loc);
+    }
+    yylval->emplace<std::shared_ptr<variable::Variable>>(std::move(var));
+    return parser::Parser::token::LHS_VARIABLE;
+  }
+  if (side == 1) if (buffered_token.size()) {
+    auto [str, loc, var] = buffered_token.front();
+    buffered_token.pop_front();
+    if (str[0] == ';') {side = 0; return str[0];}
+    if (keyword.find(str[0]) != std::string::npos) return str[0];
+    yylval->emplace<std::shared_ptr<variable::Variable>>(std::move(var));
+    return parser::Parser::token::VARIABLE;
+  }
+  int token = scope_lex(yylval,yylloc);
+  if (token == ':' || token == '=') {
+    is_declare = token == ':';
+    if (side == -1) {side = 1;return token;}
+    if (side == 0) {
+      side = -1;
+      buffered_token.emplace_back(std::string(1, token), *yylloc, std::shared_ptr<variable::Variable>());
+      return lex(yylval,yylloc);
+    }
+  }
+  if (token == ',') if (side == 0) {
+    buffered_token.emplace_back(std::string(1, token), *yylloc, std::shared_ptr<variable::Variable>());
+    return lex(yylval,yylloc);
+  }
+  if (token == parser::Parser::token::IDENTIFIER) {
+    is_declare = true;
+    side = -1;
+    buffered_token.emplace_back(yylval->as<std::string>(), *yylloc, std::shared_ptr<variable::Variable>());
+    yylval->destroy<std::string>();
+    return lex(yylval,yylloc);
+  }
+  if (token == parser::Parser::token::VARIABLE) {
+    if (side == 0) {
+      buffered_token.emplace_back(yylval->as<std::shared_ptr<variable::Variable>>()->name, *yylloc, yylval->as<std::shared_ptr<variable::Variable>>());
+      yylval->destroy<std::shared_ptr<variable::Variable>>();
+      return lex(yylval,yylloc);
+    }
+    if (side == -1) {
+      std::string name = yylval->as<std::shared_ptr<variable::Variable>>()->name;
+      yylval->destroy<std::shared_ptr<variable::Variable>>();
+      yylval->emplace<std::string>(name);
+      return parser::Parser::token::IDENTIFIER;
+    }
+  }
+  if (buffered_token.size()) {
+    side = 1;
+    buffered_token.emplace_back(std::string(1, token), *yylloc, std::shared_ptr<variable::Variable>());
+    return lex(yylval,yylloc);
+  }
+  if (token == ';') {
+    side = 0;
+    is_declare = false;
+  }
   return token;
 }
 

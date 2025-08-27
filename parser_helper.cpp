@@ -5,6 +5,7 @@
 #include "error.hpp"
 #include "callable.hpp"
 #include "type.hpp" // IWYU pragma: keep
+#include <memory>
 
 namespace parser {
   std::shared_ptr<object::Object> exec_binary_op(std::shared_ptr<object::Object> lhs, 
@@ -24,7 +25,20 @@ namespace parser {
     if (dynamic_cast<callable::Callable*>(op_obj) == nullptr) throw error::unsupported_operator(rhs,op); 
     return static_cast<callable::Callable*>(op_obj)->on_call({rhs})[0];
   }
-  void exec_declare(const std::string& name, std::shared_ptr<object::Object> obj,lexer::Lexer* lexer) {
-    lexer->scope->add_member(name, obj);
+  void exec_declare(const std::vector<std::string>& name, 
+                    const std::vector<std::shared_ptr<object::Object>>& obj,
+                    lexer::Lexer* lexer,parser::location loc) {
+    if (name.size() > obj.size()) throw error::eval_error("Invalid declaration",loc);
+    for (size_t i = 0; i < name.size(); i++) {
+      lexer->scope->members[name[i]] = obj[i];
+    }
+  }
+  void exec_assign(const std::vector<std::shared_ptr<variable::Variable>>& name, 
+                   const std::vector<std::shared_ptr<object::Object>>& obj,
+                   lexer::Lexer* lexer,parser::location loc) {
+    if (name.size() > obj.size()) throw error::eval_error("Invalid assignment",loc);
+    for (size_t i = 0; i < name.size(); i++) {
+      exec_binary_op(std::static_pointer_cast<object::Object>(name[i]), obj[i],"=");
+    }
   }
 }

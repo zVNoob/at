@@ -4,6 +4,8 @@
 #include "internal_func.hpp"
 #include "typed_func.hpp"
 #include "integer.hpp"
+#include "variable.hpp"
+#include "error.hpp"
 #include <memory>
 
 namespace string {
@@ -30,6 +32,13 @@ arg_list on_find(arg_list args) {
       args[0]->loc)};
 }
 
+arg_list on_assign(arg_list args) {
+  if (!dynamic_cast<variable::Variable*>(args[0].get()))
+    throw error::eval_error("Invalid assignment",args[0]->loc);
+  static_cast<variable::Variable*>(args[0].get())->value = args[1];
+  return {args[0]};
+}
+
 
 std::shared_ptr<type::Type> Get_String_type() {
   static std::shared_ptr<type::Type> type = 
@@ -46,6 +55,11 @@ std::shared_ptr<type::Type> Get_String_type() {
     auto func_obj = std::make_shared<TypedFunction>(Get_String_type(),parser::location(&String_sourcename,__LINE__));
     func_obj->push_func(std::make_shared<InternalFunction>(on_find),{Get_String_type(),Get_String_type()});
     type->members["%"] = func_obj;
+  }
+  {
+    auto func_obj = std::make_shared<TypedFunction>(Get_String_type(),parser::location(&String_sourcename,__LINE__));
+    func_obj->push_func(std::make_shared<InternalFunction>(on_assign),{Get_String_type(),Get_String_type()});
+    type->members["="] = func_obj;
   }
   return type;
 }

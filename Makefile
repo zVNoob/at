@@ -13,34 +13,41 @@ OBJS := $(SRCS:$(SRC_DIR)/%.cpp=$(BUILD_DIR)/%.o)
 DEPS := $(OBJS:.o=.d)
 
 CXX := g++
-CXXFLAGS :=-std=c++20 -g
-CPPFLAGS := $(addprefix -I, $(INCS))
+CXXFLAGS :=-std=c++20
+CPPFLAGS := -MMD $(addprefix -I, $(INCS))
+
+LD := ld
 LIBS := gmp
 LDLIBS := $(addprefix -l, $(LIBS))
 
+all: debug
 
-all: bison $(NAME)
+debug: CXXFLAGS += -g
+debug: exec
+release: CXXFLAGS += -O2 -flto=auto
+release: exec
+
+exec: bison $(NAME)
+
+parser.cpp: parser.y
+	bison $^ -o $@ -Wcounterexample
+
+bison: parser.cpp
 
 $(NAME): $(OBJS)
 	$(CXX) $(CXXFLAGS) $(OBJS) $(LDLIBS) -o $@
+
+-include $(DEPS)
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
 	mkdir -p $(@D)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $<
 
-
 clean:
 	rm -rf $(BUILD_DIR)
 
-bison: parser.y
-	[ -e $(^:.y=.cpp) ] && mv $(^:.y=.cpp) $(addprefix ~,$(^:.y=.cpp)) || true
-	[ -e $(^:.y=.hpp) ] && mv $(^:.y=.hpp) $(addprefix ~,$(^:.y=.hpp)) || true
-	bison $^ -o $(^:.y=.cpp) -Wcounterexample
-	if diff $(^:.y=.cpp) $(addprefix ~,$(^:.y=.cpp)) >/dev/null;\
-	then mv $(addprefix ~,$(^:.y=.hpp)) $(^:.y=.hpp);mv $(addprefix ~,$(^:.y=.cpp)) $(^:.y=.cpp);\
-	else rm $(addprefix ~,$(^:.y=.hpp));rm $(addprefix ~,$(^:.y=.cpp));\
-	fi
+fclean: clean
+	rm -f parser.cpp parser.hpp
 
-.PHONY: all clean bison
-
+.PHONY: all clean bison fclean
 

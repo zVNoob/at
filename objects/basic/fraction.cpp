@@ -4,6 +4,8 @@
 #include "internal_func.hpp"
 #include "typed_func.hpp"
 #include "type.hpp"
+#include "variable.hpp"
+#include "error.hpp"
 #include <memory>
 #include <sstream>
 
@@ -50,6 +52,23 @@ arg_list on_mul(arg_list args) {
       args[0]->loc)};
 }
 
+arg_list on_div(arg_list args) {
+  auto arg0 = to_fraction(args[0]);
+  auto arg1 = to_fraction(args[1]);
+  return {
+    std::make_shared<Fraction>(
+        arg0->value / 
+        arg1->value,
+      args[0]->loc)};
+}
+
+arg_list on_assign(arg_list args) {
+  if (!dynamic_cast<variable::Variable*>(args[0].get()))
+    throw error::eval_error("Invalid assignment",args[0]->loc);
+  static_cast<variable::Variable*>(args[0].get())->value = args[1];
+  return {args[0]};
+}
+
 std::shared_ptr<type::Type> Get_Fraction_type() {
   static std::shared_ptr<type::Type> type = 
     std::make_shared<type::Type>(parser::location(&Fraction_sourcename,__LINE__),"Fraction");
@@ -81,6 +100,20 @@ std::shared_ptr<type::Type> Get_Fraction_type() {
     type->members["*"] = func_obj;
     auto int_func_obj = static_cast<TypedFunction*>(integer::Get_Integer_type()->members["*"].get());
     int_func_obj->push_func(std::make_shared<InternalFunction>(on_mul),{integer::Get_Integer_type(),Get_Fraction_type()});
+  }
+  {
+    auto func_obj = std::make_shared<TypedFunction>(Get_Fraction_type(),parser::location(&Fraction_sourcename,__LINE__));
+    func_obj->push_func(std::make_shared<InternalFunction>(on_div),{Get_Fraction_type(),Get_Fraction_type()});
+    func_obj->push_func(std::make_shared<InternalFunction>(on_div),{Get_Fraction_type(),integer::Get_Integer_type()});
+    type->members["/"] = func_obj;
+    auto int_func_obj = static_cast<TypedFunction*>(integer::Get_Integer_type()->members["/"].get());
+    int_func_obj->push_func(std::make_shared<InternalFunction>(on_div),{integer::Get_Integer_type(),Get_Fraction_type()});
+  }
+  {
+    auto func_obj = std::make_shared<TypedFunction>(Get_Fraction_type(),parser::location(&Fraction_sourcename,__LINE__));
+    func_obj->push_func(std::make_shared<InternalFunction>(on_assign),{Get_Fraction_type(),Get_Fraction_type()});
+    func_obj->push_func(std::make_shared<InternalFunction>(on_assign),{Get_Fraction_type(),integer::Get_Integer_type()});
+    type->members["="] = func_obj;
   }
   return type;
 
