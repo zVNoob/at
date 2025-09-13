@@ -48,12 +48,13 @@
 #line 19 "parser.y"
 
 #include <memory>
+#include <vector>
 #define yylex lexer->lex
 namespace lexer {class Lexer;}
 namespace error {class ErrorReporter;}
 namespace object {class Object;}
 
-#line 57 "parser.hpp"
+#line 58 "parser.hpp"
 
 # include <cassert>
 # include <cstdlib> // std::abort
@@ -194,7 +195,7 @@ namespace object {class Object;}
 
 #line 6 "parser.y"
 namespace parser {
-#line 198 "parser.hpp"
+#line 199 "parser.hpp"
 
 
 
@@ -416,14 +417,16 @@ namespace parser {
       // INTEGER
       // FRACTION
       // STRING
+      // IDENTIFIER
+      // VARIABLE
+      // vars
       // expr
       char dummy1[sizeof (std::shared_ptr<object::Object>)];
 
-      // IDENTIFIER
-      char dummy2[sizeof (std::string)];
-
+      // arg_list
       // expr_list
-      char dummy3[sizeof (std::vector<std::shared_ptr<object::Object>>)];
+      // var_list
+      char dummy2[sizeof (std::vector<std::shared_ptr<object::Object>>)];
     };
 
     /// The size of the largest semantic type.
@@ -480,7 +483,7 @@ namespace parser {
     FRACTION = 259,                // FRACTION
     STRING = 260,                  // STRING
     IDENTIFIER = 261,              // IDENTIFIER
-    UNEVALUATABLE = 262,           // UNEVALUATABLE
+    VARIABLE = 262,                // VARIABLE
     UNARY = 263                    // UNARY
       };
       /// Backward compatibility alias (Bison 3.6).
@@ -498,7 +501,7 @@ namespace parser {
     {
       enum symbol_kind_type
       {
-        YYNTOKENS = 22, ///< Number of tokens.
+        YYNTOKENS = 24, ///< Number of tokens.
         S_YYEMPTY = -2,
         S_YYEOF = 0,                             // "end of file"
         S_YYerror = 1,                           // error
@@ -507,26 +510,31 @@ namespace parser {
         S_FRACTION = 4,                          // FRACTION
         S_STRING = 5,                            // STRING
         S_IDENTIFIER = 6,                        // IDENTIFIER
-        S_UNEVALUATABLE = 7,                     // UNEVALUATABLE
-        S_8_ = 8,                                // '['
-        S_9_ = 9,                                // ']'
-        S_10_ = 10,                              // '+'
-        S_11_ = 11,                              // '-'
-        S_12_ = 12,                              // '*'
-        S_13_ = 13,                              // '/'
-        S_14_ = 14,                              // '%'
-        S_UNARY = 15,                            // UNARY
-        S_16_ = 16,                              // '`'
-        S_17_ = 17,                              // '('
-        S_18_ = 18,                              // ')'
-        S_19_ = 19,                              // '~'
-        S_20_ = 20,                              // ','
-        S_21_ = 21,                              // ';'
-        S_YYACCEPT = 22,                         // $accept
-        S_expr = 23,                             // expr
-        S_expr_list = 24,                        // expr_list
-        S_stmt = 25,                             // stmt
-        S_scope = 26                             // scope
+        S_VARIABLE = 7,                          // VARIABLE
+        S_8_ = 8,                                // ':'
+        S_9_ = 9,                                // '='
+        S_10_ = 10,                              // '['
+        S_11_ = 11,                              // ']'
+        S_12_ = 12,                              // '('
+        S_13_ = 13,                              // ')'
+        S_14_ = 14,                              // '+'
+        S_15_ = 15,                              // '-'
+        S_16_ = 16,                              // '*'
+        S_17_ = 17,                              // '/'
+        S_18_ = 18,                              // '%'
+        S_UNARY = 19,                            // UNARY
+        S_20_ = 20,                              // '`'
+        S_21_ = 21,                              // '~'
+        S_22_ = 22,                              // ','
+        S_23_ = 23,                              // ';'
+        S_YYACCEPT = 24,                         // $accept
+        S_vars = 25,                             // vars
+        S_expr = 26,                             // expr
+        S_arg_list = 27,                         // arg_list
+        S_expr_list = 28,                        // expr_list
+        S_var_list = 29,                         // var_list
+        S_stmt = 30,                             // stmt
+        S_scope = 31                             // scope
       };
     };
 
@@ -566,15 +574,16 @@ namespace parser {
       case symbol_kind::S_INTEGER: // INTEGER
       case symbol_kind::S_FRACTION: // FRACTION
       case symbol_kind::S_STRING: // STRING
+      case symbol_kind::S_IDENTIFIER: // IDENTIFIER
+      case symbol_kind::S_VARIABLE: // VARIABLE
+      case symbol_kind::S_vars: // vars
       case symbol_kind::S_expr: // expr
         value.move< std::shared_ptr<object::Object> > (std::move (that.value));
         break;
 
-      case symbol_kind::S_IDENTIFIER: // IDENTIFIER
-        value.move< std::string > (std::move (that.value));
-        break;
-
+      case symbol_kind::S_arg_list: // arg_list
       case symbol_kind::S_expr_list: // expr_list
+      case symbol_kind::S_var_list: // var_list
         value.move< std::vector<std::shared_ptr<object::Object>> > (std::move (that.value));
         break;
 
@@ -609,20 +618,6 @@ namespace parser {
       {}
 #else
       basic_symbol (typename Base::kind_type t, const std::shared_ptr<object::Object>& v, const location_type& l)
-        : Base (t)
-        , value (v)
-        , location (l)
-      {}
-#endif
-
-#if 201103L <= YY_CPLUSPLUS
-      basic_symbol (typename Base::kind_type t, std::string&& v, location_type&& l)
-        : Base (t)
-        , value (std::move (v))
-        , location (std::move (l))
-      {}
-#else
-      basic_symbol (typename Base::kind_type t, const std::string& v, const location_type& l)
         : Base (t)
         , value (v)
         , location (l)
@@ -670,15 +665,16 @@ switch (yykind)
       case symbol_kind::S_INTEGER: // INTEGER
       case symbol_kind::S_FRACTION: // FRACTION
       case symbol_kind::S_STRING: // STRING
+      case symbol_kind::S_IDENTIFIER: // IDENTIFIER
+      case symbol_kind::S_VARIABLE: // VARIABLE
+      case symbol_kind::S_vars: // vars
       case symbol_kind::S_expr: // expr
         value.template destroy< std::shared_ptr<object::Object> > ();
         break;
 
-      case symbol_kind::S_IDENTIFIER: // IDENTIFIER
-        value.template destroy< std::string > ();
-        break;
-
+      case symbol_kind::S_arg_list: // arg_list
       case symbol_kind::S_expr_list: // expr_list
+      case symbol_kind::S_var_list: // var_list
         value.template destroy< std::vector<std::shared_ptr<object::Object>> > ();
         break;
 
@@ -781,9 +777,11 @@ switch (yykind)
 #if !defined _MSC_VER || defined __clang__
         YY_ASSERT (tok == token::YYEOF
                    || (token::YYerror <= tok && tok <= token::YYUNDEF)
-                   || tok == token::UNEVALUATABLE
+                   || tok == 58
+                   || tok == 61
                    || tok == 91
                    || tok == 93
+                   || (40 <= tok && tok <= 41)
                    || tok == 43
                    || tok == 45
                    || tok == 42
@@ -791,7 +789,6 @@ switch (yykind)
                    || tok == 37
                    || tok == token::UNARY
                    || tok == 96
-                   || (40 <= tok && tok <= 41)
                    || tok == 126
                    || tok == 44
                    || tok == 59);
@@ -806,19 +803,7 @@ switch (yykind)
 #endif
       {
 #if !defined _MSC_VER || defined __clang__
-        YY_ASSERT ((token::INTEGER <= tok && tok <= token::STRING));
-#endif
-      }
-#if 201103L <= YY_CPLUSPLUS
-      symbol_type (int tok, std::string v, location_type l)
-        : super_type (token_kind_type (tok), std::move (v), std::move (l))
-#else
-      symbol_type (int tok, const std::string& v, const location_type& l)
-        : super_type (token_kind_type (tok), v, l)
-#endif
-      {
-#if !defined _MSC_VER || defined __clang__
-        YY_ASSERT (tok == token::IDENTIFIER);
+        YY_ASSERT ((token::INTEGER <= tok && tok <= token::VARIABLE));
 #endif
       }
     };
@@ -962,14 +947,14 @@ switch (yykind)
 #if 201103L <= YY_CPLUSPLUS
       static
       symbol_type
-      make_IDENTIFIER (std::string v, location_type l)
+      make_IDENTIFIER (std::shared_ptr<object::Object> v, location_type l)
       {
         return symbol_type (token::IDENTIFIER, std::move (v), std::move (l));
       }
 #else
       static
       symbol_type
-      make_IDENTIFIER (const std::string& v, const location_type& l)
+      make_IDENTIFIER (const std::shared_ptr<object::Object>& v, const location_type& l)
       {
         return symbol_type (token::IDENTIFIER, v, l);
       }
@@ -977,16 +962,16 @@ switch (yykind)
 #if 201103L <= YY_CPLUSPLUS
       static
       symbol_type
-      make_UNEVALUATABLE (location_type l)
+      make_VARIABLE (std::shared_ptr<object::Object> v, location_type l)
       {
-        return symbol_type (token::UNEVALUATABLE, std::move (l));
+        return symbol_type (token::VARIABLE, std::move (v), std::move (l));
       }
 #else
       static
       symbol_type
-      make_UNEVALUATABLE (const location_type& l)
+      make_VARIABLE (const std::shared_ptr<object::Object>& v, const location_type& l)
       {
-        return symbol_type (token::UNEVALUATABLE, l);
+        return symbol_type (token::VARIABLE, v, l);
       }
 #endif
 #if 201103L <= YY_CPLUSPLUS
@@ -1334,8 +1319,8 @@ switch (yykind)
     /// Constants.
     enum
     {
-      yylast_ = 59,     ///< Last index in yytable_.
-      yynnts_ = 5,  ///< Number of nonterminal symbols.
+      yylast_ = 113,     ///< Last index in yytable_.
+      yynnts_ = 8,  ///< Number of nonterminal symbols.
       yyfinal_ = 2 ///< Termination state number.
     };
 
@@ -1349,7 +1334,7 @@ switch (yykind)
 
 #line 6 "parser.y"
 } // parser
-#line 1353 "parser.hpp"
+#line 1338 "parser.hpp"
 
 
 

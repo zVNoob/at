@@ -5,6 +5,7 @@
 #include "typed_func.hpp"
 #include "type.hpp"
 #include "error.hpp"
+#include "variable.hpp"
 #include <memory>
 
 namespace fraction {
@@ -53,6 +54,11 @@ std::shared_ptr<Object> on_div(arg_list args) {
         arg1->value);
 }
 
+std::shared_ptr<Object> on_assign(arg_list args) {
+  static_cast<variable::Variable*>(args[0].get())->set_value(args[1]);
+  return args[1];
+}
+
 std::shared_ptr<type::Type> Get_Fraction_type() {
   static std::shared_ptr<type::Type> type = 
     std::make_shared<type::Type>();
@@ -92,6 +98,11 @@ std::shared_ptr<type::Type> Get_Fraction_type() {
     type->members["/"] = func_obj;
     auto int_func_obj = static_cast<TypedFunction*>(integer::Get_Integer_type()->members["/"].get());
     int_func_obj->push_func(std::make_shared<InternalFunction>(on_div),{integer::Get_Integer_type(),Get_Fraction_type()});
+  }
+  {
+    auto func_obj = std::make_shared<TypedFunction>(Get_Fraction_type());
+    func_obj->push_func(std::make_shared<InternalFunction>(on_assign),{Get_Fraction_type(),Get_Fraction_type()});
+    type->members["="] = func_obj;
   }
   return type;
 

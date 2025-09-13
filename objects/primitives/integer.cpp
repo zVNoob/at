@@ -48,6 +48,12 @@ std::shared_ptr<Object> on_mod(arg_list args) {
         static_cast<Integer*>(args[1].get())->value);
 }
 
+std::shared_ptr<Object> on_assign(arg_list args) {
+  // 1st arg is always variable
+  static_cast<variable::Variable*>(args[0].get())->set_value(args[1]);
+  return args[1];
+}
+
 std::shared_ptr<type::Type> Get_Integer_type() {
   static std::shared_ptr<type::Type> type = 
     std::make_shared<type::Type>();
@@ -80,6 +86,11 @@ std::shared_ptr<type::Type> Get_Integer_type() {
     auto func_obj = std::make_shared<TypedFunction>(Get_Integer_type());
     func_obj->push_func(std::make_shared<InternalFunction>(on_mod),{Get_Integer_type(),Get_Integer_type()});
     type->members["%"] = func_obj;
+  }
+  {
+    auto func_obj = std::make_shared<TypedFunction>(Get_Integer_type());
+    func_obj->push_func(std::make_shared<InternalFunction>(on_assign),{Get_Integer_type(),Get_Integer_type()});
+    type->members["="] = func_obj;
   }
   return type;
 }

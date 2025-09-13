@@ -10,19 +10,28 @@
 
 namespace error {
 class ErrorReporter {
+protected:
+  virtual void on_orphan_value(std::shared_ptr<object::Object> value) {
+    // do nothing
+  }
 public:
   int tabstop = 4;
+  bool is_assigning = false;
   virtual void report(lexer::Lexer* lexer,parser::location loc,const std::string& msg) = 0;
-  virtual void orphan_value(std::shared_ptr<object::Object> value) {
-    // do nothing
+  void orphan_value(std::shared_ptr<object::Object> value) {
+    if (is_assigning) {
+      is_assigning = false;
+      return;
+    }
+    on_orphan_value(value);
   }
 };
 class StreamErrorReporter : public ErrorReporter {
+  void on_orphan_value(std::shared_ptr<object::Object> value) override;
 public:
   std::ostream &output;
   explicit StreamErrorReporter(std::ostream &output) : output(output) {}
   void report(lexer::Lexer* lexer,parser::location loc,const std::string& msg) override;
-  void orphan_value(std::shared_ptr<object::Object> value) override;
   void dump_object(object::Object* obj);
 };
 

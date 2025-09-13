@@ -8,17 +8,23 @@
 #include "bigfraction.hpp"
 
 #include "integer.hpp"
+#include "fraction.hpp"
 #include "string.hpp"
+#include "variable.hpp"
 
 #include <memory>
+#include <tuple>
+#include <utility>
 
 namespace lexer {
 
 std::pair<char, parser::position> Lexer::get_char() {
   char c = next();
   buffer.back().push_back(c);
+  int tabstop = 8;
+  if (error_reporter) tabstop = error_reporter->tabstop;
   if (c == '\t') {
-    current_col = (current_col / error_reporter->tabstop + 1) * error_reporter->tabstop;
+    current_col = (current_col / tabstop + 1) * tabstop;
   }
   else {
     current_col++;
@@ -84,11 +90,19 @@ int Lexer::process_multichar_token(char current_char,
   while (s.back() == ' ' || s.back() == '\n' || s.back() == '\t') s.pop_back();
   std::shared_ptr<object::Object> result;
   if (token_type == parser::Parser::token::INTEGER) result = std::make_shared<integer::Integer>(BigInt(s));
-  if (token_type == parser::Parser::token::FRACTION) result = nullptr;
-  if (token_type == parser::Parser::token::IDENTIFIER) yylval->emplace<std::string>(s);
+  if (token_type == parser::Parser::token::FRACTION) result = std::make_shared<fraction::Fraction>(BigFraction(s));
+  if (token_type == parser::Parser::token::IDENTIFIER) std::tie(token_type, result) = process_identifier(s);
   yylval->emplace<std::shared_ptr<object::Object>>(result);
   return token_type;
 }
+
+std::pair<int, std::shared_ptr<variable::Variable>> Lexer::process_identifier(std::string s) {
+  auto [obj,found] = current_scope->get_variable(s);
+  auto var_ptr = std::make_shared<variable::Variable>(obj);
+  if (found) return {parser::Parser::token::VARIABLE, std::move(var_ptr)};
+  else return {parser::Parser::token::IDENTIFIER, std::move(var_ptr)};
+}
+
 
 int Lexer::pure_lex(parser::Parser::value_type* yylval,parser::Parser::location_type* yylloc) {
   std::pair<char, parser::position> p = {0, yylloc->end};

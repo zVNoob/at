@@ -14,6 +14,12 @@ public:
     name(name), value(value), re_declarable(re_declarable), readonly(readonly) {
     if (value) type = value->get()->type;
   };
+  virtual std::shared_ptr<object::Object> get_value() {
+    return *value;
+  };
+  virtual void set_value(std::shared_ptr<object::Object> value) {
+    *this->value = value;
+  }
 };
 
 }
