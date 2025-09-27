@@ -9,7 +9,6 @@
 
 #include "error.hpp"
 #include "scope.hpp"
-#include "variable.hpp"
 
 
 namespace error {class ErrorReporter;}
@@ -31,10 +30,12 @@ public:
     virtual char next() = 0;
   private:
     std::pair<char, parser::position> get_char();
+    int scope_lex(parser::Parser::value_type* yylval, parser::Parser::location_type* yylloc);
     int pure_lex(parser::Parser::value_type* yylval, parser::Parser::location_type* yylloc);
     void process_string(parser::Parser::value_type* yylval, parser::Parser::location_type* yylloc);
     int process_multichar_token(char current_char, parser::Parser::value_type* yylval, parser::Parser::location_type* yylloc);
-    std::pair<int,std::shared_ptr<variable::Variable>> process_identifier(std::string s);
+    int process_keyword(char current_char, parser::Parser::location_type* yylloc);
+    std::pair<int,std::shared_ptr<object::Object>> process_identifier(std::string s);
   };
 
   class StreamLexer : public Lexer {

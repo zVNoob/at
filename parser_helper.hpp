@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 
+#include "error.hpp"
 #include "lexer.hpp"
 #include "object.hpp"
 #include "location.hh"
@@ -18,6 +19,10 @@ std::shared_ptr<object::Object> exec_call(std::shared_ptr<object::Object> obj,
                                          std::vector<std::shared_ptr<object::Object>> args, 
                                          std::string method,parser::location loc);
 
+std::shared_ptr<object::Object> exec_constructor(std::shared_ptr<object::Object> type,
+                                                 std::vector<std::shared_ptr<object::Object>> args,
+                                                 parser::location loc);
+
 std::shared_ptr<object::Object> exec_assign(std::vector<std::shared_ptr<object::Object>> vars, 
                  std::shared_ptr<object::Object> rhs, 
                  parser::location loc);
@@ -28,5 +33,10 @@ std::shared_ptr<object::Object> exec_assign_single(std::shared_ptr<object::Objec
 std::shared_ptr<object::Object> exec_declare(std::vector<std::shared_ptr<object::Object>> vars,
                   std::shared_ptr<object::Object> rhs, lexer::Lexer* lexer,parser::location loc);
 std::shared_ptr<object::Object> exec_build_array(std::vector<std::shared_ptr<object::Object>> elements,parser::location loc);
+std::shared_ptr<object::Object> exec_conditional(std::shared_ptr<object::Object> cond, 
+                                                 std::shared_ptr<object::Object> lhs, 
+                                                 std::shared_ptr<object::Object> rhs,
+                                                 parser::location loc);
+void on_orphan_value(std::shared_ptr<object::Object> value, lexer::Lexer* lexer, error::ErrorReporter* err_rp);
 
 }

@@ -23,6 +23,7 @@
 namespace lexer {class Lexer;}
 namespace error {class ErrorReporter;}
 namespace object {class Object;}
+namespace type {class Type;}
 }
 
 %{
@@ -33,12 +34,14 @@ namespace object {class Object;}
 #include "variable.hpp"
 #include "tuple.hpp"
 #include "array.hpp"
+#include "type.hpp"
 
 #include "parser_helper.hpp"
 #include <iostream>
 #include <memory>
 %}
 
+%token FORWARD_DECLARE
 
 %token <std::shared_ptr<object::Object>> INTEGER
 %token <std::shared_ptr<object::Object>> FRACTION
@@ -46,15 +49,21 @@ namespace object {class Object;}
 
 %token <std::shared_ptr<object::Object>> IDENTIFIER
 %token <std::shared_ptr<object::Object>> VARIABLE
+%token <std::shared_ptr<object::Object>> TYPE
 
 %nterm <std::shared_ptr<object::Object>> vars
+%nterm <std::shared_ptr<type::Type>> type
 %nterm <std::shared_ptr<object::Object>> expr
 %nterm <std::vector<std::shared_ptr<object::Object>>> expr_list
 %nterm <std::vector<std::shared_ptr<object::Object>>> var_list
 %nterm <std::vector<std::shared_ptr<object::Object>>> arg_list
-
+%nterm <std::vector<std::shared_ptr<type::Type>>> type_list
 
 %right ':' '='
+
+%left TYPE_PREC
+
+%left '?'
 
 %right '[' ']' '(' ')'
 
@@ -71,6 +80,14 @@ vars: VARIABLE { $$ = $1; }
     | expr '[' arg_list ']' { $$ = exec_call($1,$3,"[]",@2); }
     | expr '(' arg_list ')' { $$ = exec_call($1,$3,"()",@2); }
 
+type: TYPE { $$ = std::static_pointer_cast<type::Type>($1); }
+    | '`' expr { $$ = $2->type; }
+    | '[' type ']' { $$ = array::get_Array_type($2); }
+    | '(' type_list ')' { $$ = tuple::get_Tuple_type($2); }
+
+type_list: type ',' type { $$ = std::vector<std::shared_ptr<type::Type>>{$1,$3}; }
+         | type_list ',' type { $$ = std::move($1); $$.push_back($3); }
+
 expr: INTEGER { $$ = $1; }
     | FRACTION { $$ = $1; }
     | STRING { $$ = $1; }
@@ -86,8 +103,11 @@ expr: INTEGER { $$ = $1; }
     | '~' expr %prec UNARY { $$ = exec_unary_op($2,"~",@1); }
     | '(' expr_list ')' { $$ = make_shared<tuple::Tuple>($2); }
     | '[' arg_list ']' { $$ = exec_build_array($2,@2); }
+    | type '(' arg_list ')' { $$ = exec_constructor($1,$3,@2); }
+    | expr '?' expr ':' expr { $$ = exec_conditional($1,$3,$5,@2); }
 
-arg_list: expr { $$ = std::vector<std::shared_ptr<object::Object>>{$1}; }
+arg_list: %empty { $$ = std::vector<std::shared_ptr<object::Object>>{}; }
+        | expr { $$ = std::vector<std::shared_ptr<object::Object>>{$1}; }
         | arg_list ',' expr { $$ = std::move($1); $$.push_back($3); }
 
 expr_list: expr ',' expr { $$ = std::vector<std::shared_ptr<object::Object>>{$1,$3}; }
@@ -100,10 +120,13 @@ var_list: IDENTIFIER { $$ = std::vector<std::shared_ptr<object::Object>>{$1}; }
 
 
 stmt: %empty
-    | expr { err_rp->orphan_value($1); }
+    | expr { on_orphan_value($1,lexer,err_rp); }
     | IDENTIFIER { throw error::eval_error("Undefined variable: " + static_pointer_cast<variable::Variable>($1)->name, @1); }
     | var_list '=' expr { exec_assign($1,$3,@2); }
     | var_list ':' expr { exec_declare($1,$3,lexer,@2); }
+    | var_list FORWARD_DECLARE type { exec_declare($1,$3,lexer,@2); }
+    | var_list ':' type { exec_declare($1,$3,lexer,@2); }
+
     | error
     ;
 

@@ -1,7 +1,9 @@
 #include "parser_helper.hpp"
 
+#include "ast.hpp"
 #include "callable.hpp"
 #include "error.hpp"
+#include "integer.hpp"
 #include "object.hpp"
 #include "type.hpp" // IWYU pragma: keep
 #include "tuple.hpp"
@@ -105,5 +107,36 @@ std::shared_ptr<object::Object> exec_build_array(std::vector<std::shared_ptr<obj
   return result;
 }
 
+void on_orphan_value(std::shared_ptr<object::Object> value, lexer::Lexer* lexer, error::ErrorReporter* err_rp) {
+  if (dynamic_cast<ast::Ast*>(value.get()) != nullptr) {
+    lexer->current_scope->add_statement(std::static_pointer_cast<ast::Ast>(value));
+  } else {
+    err_rp->orphan_value(value);
+  }
+}
+
+std::shared_ptr<object::Object> exec_constructor(std::shared_ptr<object::Object> type,
+                                                 std::vector<std::shared_ptr<object::Object>> args,
+                                                 parser::location loc) {
+  auto temp = std::static_pointer_cast<type::Type>(type);
+  auto func_obj = temp->members[""];
+  if (func_obj == nullptr) throw error::eval_error("This type has no constructor",loc);
+  if (dynamic_cast<callable::Callable*>(func_obj.get()) == nullptr) 
+    throw error::eval_error("This type has no constructor",loc);
+  auto arg = args;
+  arg.insert(arg.begin(),type);
+  return static_cast<callable::Callable*>(func_obj.get())->on_call(arg,loc);
+}
+
+std::shared_ptr<object::Object> exec_conditional(std::shared_ptr<object::Object> cond, std::shared_ptr<object::Object> lhs, std::shared_ptr<object::Object> rhs,parser::location loc) {
+  if (cond->type != integer::Get_Integer_type())
+    throw error::eval_error("Condition must be an integer",loc);
+  if (lhs->type != rhs->type)
+    throw error::eval_error("Branches of conditional must be of the same type",loc);
+  if (std::static_pointer_cast<integer::Integer>(cond)->value == BigInt(0))
+    return rhs;
+  else
+    return lhs;
+}
 
 }

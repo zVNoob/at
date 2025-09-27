@@ -1,6 +1,8 @@
 #include "integer.hpp"
 
 #include "callable.hpp"
+#include "string.hpp"
+#include "fraction.hpp" 
 #include "typed_func.hpp"
 #include "internal_func.hpp"
 #include "type.hpp"
@@ -54,6 +56,17 @@ std::shared_ptr<Object> on_assign(arg_list args) {
   return args[1];
 }
 
+std::shared_ptr<Object> on_construct(arg_list args) {
+  if (args.size() == 1) return std::make_shared<Integer>(BigInt(0));
+  if (dynamic_cast<Integer*>(args[1].get())) return args[1];
+  if (dynamic_cast<string::String*>(args[1].get())) return std::make_shared<Integer>(BigInt(static_cast<string::String*>(args[1].get())->value));
+  if (dynamic_cast<fraction::Fraction*>(args[1].get())) {
+    BigInt num = static_cast<fraction::Fraction*>(args[1].get())->value();
+    return std::make_shared<Integer>(num);
+  }
+  throw error::internal_error("Invalid argument for Integer constructor");
+}
+
 std::shared_ptr<type::Type> Get_Integer_type() {
   static std::shared_ptr<type::Type> type = 
     std::make_shared<type::Type>();
@@ -91,6 +104,13 @@ std::shared_ptr<type::Type> Get_Integer_type() {
     auto func_obj = std::make_shared<TypedFunction>(Get_Integer_type());
     func_obj->push_func(std::make_shared<InternalFunction>(on_assign),{Get_Integer_type(),Get_Integer_type()});
     type->members["="] = func_obj;
+  }
+  {
+    auto func_obj = std::make_shared<TypedFunction>(Get_Integer_type());
+    func_obj->push_func(std::make_shared<InternalFunction>(on_construct),{nullptr,Get_Integer_type()});
+    func_obj->push_func(std::make_shared<InternalFunction>(on_construct),{nullptr,string::Get_String_type()});
+    func_obj->push_func(std::make_shared<InternalFunction>(on_construct),{nullptr,fraction::Get_Fraction_type()});
+    type->members[""] = func_obj;
   }
   return type;
 }

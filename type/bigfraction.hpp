@@ -40,6 +40,7 @@ public:
       reduce();
     }
   }
+  BigInt operator()() const { return numerator / denominator; }
   // io
   friend std::ostream &operator<<(std::ostream &os, const BigFraction &f) {
     if (f.denominator == BigInt(1)) {

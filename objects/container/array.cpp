@@ -37,12 +37,12 @@ public:
     Variable("", 0), container(container), index(index) {
     type = integer::Get_Integer_type();
   };
-  std::shared_ptr<object::Object> get_value() {
+  std::shared_ptr<object::Object> get_value() override {
     if (index < 0 || index >= container->elements.size())
       throw error::internal_error("Index out of range");
     return container->elements[index];
   }
-  void set_value(std::shared_ptr<Object> value) {
+  void set_value(std::shared_ptr<Object> value) override {
     if (index < 0 || index >= container->elements.size())
       throw error::internal_error("Index out of range");
     container->elements[index] = value;
@@ -60,6 +60,12 @@ std::shared_ptr<Object> on_assign(arg_list args) {
   // 1st arg is always variable
   static_cast<variable::Variable*>(args[0].get())->set_value(args[1]);
   return args[1];
+}
+
+std::shared_ptr<Object> on_constructor(arg_list args) {
+  auto type = std::static_pointer_cast<type::Type>(args[0]);
+  auto element_type = std::static_pointer_cast<type::Type>(type->members["`"]);
+  return std::make_shared<Array>(element_type);
 }
 
 void build_Array_type(std::shared_ptr<type::Type>& type,std::shared_ptr<type::Type> element_type) {
@@ -83,6 +89,12 @@ void build_Array_type(std::shared_ptr<type::Type>& type,std::shared_ptr<type::Ty
     func_obj->push_func(std::make_shared<InternalFunction>(on_assign),{type,type});
     type->members["="] = func_obj;
   }
+  {
+    auto func_obj = std::make_shared<TypedFunction>(type);
+    func_obj->push_func(std::make_shared<InternalFunction>(on_constructor),{nullptr});
+    type->members[""] = func_obj;
+  }
+  type->members["`"] = element_type;
 }
 
 std::shared_ptr<type::Type> get_Array_type(std::shared_ptr<type::Type> element_type) {

@@ -53,8 +53,9 @@
 namespace lexer {class Lexer;}
 namespace error {class ErrorReporter;}
 namespace object {class Object;}
+namespace type {class Type;}
 
-#line 58 "parser.hpp"
+#line 59 "parser.hpp"
 
 # include <cassert>
 # include <cstdlib> // std::abort
@@ -195,7 +196,7 @@ namespace object {class Object;}
 
 #line 6 "parser.y"
 namespace parser {
-#line 199 "parser.hpp"
+#line 200 "parser.hpp"
 
 
 
@@ -419,14 +420,21 @@ namespace parser {
       // STRING
       // IDENTIFIER
       // VARIABLE
+      // TYPE
       // vars
       // expr
       char dummy1[sizeof (std::shared_ptr<object::Object>)];
 
+      // type
+      char dummy2[sizeof (std::shared_ptr<type::Type>)];
+
       // arg_list
       // expr_list
       // var_list
-      char dummy2[sizeof (std::vector<std::shared_ptr<object::Object>>)];
+      char dummy3[sizeof (std::vector<std::shared_ptr<object::Object>>)];
+
+      // type_list
+      char dummy4[sizeof (std::vector<std::shared_ptr<type::Type>>)];
     };
 
     /// The size of the largest semantic type.
@@ -479,12 +487,15 @@ namespace parser {
     YYEOF = 0,                     // "end of file"
     YYerror = 256,                 // error
     YYUNDEF = 257,                 // "invalid token"
-    INTEGER = 258,                 // INTEGER
-    FRACTION = 259,                // FRACTION
-    STRING = 260,                  // STRING
-    IDENTIFIER = 261,              // IDENTIFIER
-    VARIABLE = 262,                // VARIABLE
-    UNARY = 263                    // UNARY
+    FORWARD_DECLARE = 258,         // FORWARD_DECLARE
+    INTEGER = 259,                 // INTEGER
+    FRACTION = 260,                // FRACTION
+    STRING = 261,                  // STRING
+    IDENTIFIER = 262,              // IDENTIFIER
+    VARIABLE = 263,                // VARIABLE
+    TYPE = 264,                    // TYPE
+    TYPE_PREC = 265,               // TYPE_PREC
+    UNARY = 266                    // UNARY
       };
       /// Backward compatibility alias (Bison 3.6).
       typedef token_kind_type yytokentype;
@@ -501,40 +512,46 @@ namespace parser {
     {
       enum symbol_kind_type
       {
-        YYNTOKENS = 24, ///< Number of tokens.
+        YYNTOKENS = 28, ///< Number of tokens.
         S_YYEMPTY = -2,
         S_YYEOF = 0,                             // "end of file"
         S_YYerror = 1,                           // error
         S_YYUNDEF = 2,                           // "invalid token"
-        S_INTEGER = 3,                           // INTEGER
-        S_FRACTION = 4,                          // FRACTION
-        S_STRING = 5,                            // STRING
-        S_IDENTIFIER = 6,                        // IDENTIFIER
-        S_VARIABLE = 7,                          // VARIABLE
-        S_8_ = 8,                                // ':'
-        S_9_ = 9,                                // '='
-        S_10_ = 10,                              // '['
-        S_11_ = 11,                              // ']'
-        S_12_ = 12,                              // '('
-        S_13_ = 13,                              // ')'
-        S_14_ = 14,                              // '+'
-        S_15_ = 15,                              // '-'
-        S_16_ = 16,                              // '*'
-        S_17_ = 17,                              // '/'
-        S_18_ = 18,                              // '%'
-        S_UNARY = 19,                            // UNARY
-        S_20_ = 20,                              // '`'
-        S_21_ = 21,                              // '~'
-        S_22_ = 22,                              // ','
-        S_23_ = 23,                              // ';'
-        S_YYACCEPT = 24,                         // $accept
-        S_vars = 25,                             // vars
-        S_expr = 26,                             // expr
-        S_arg_list = 27,                         // arg_list
-        S_expr_list = 28,                        // expr_list
-        S_var_list = 29,                         // var_list
-        S_stmt = 30,                             // stmt
-        S_scope = 31                             // scope
+        S_FORWARD_DECLARE = 3,                   // FORWARD_DECLARE
+        S_INTEGER = 4,                           // INTEGER
+        S_FRACTION = 5,                          // FRACTION
+        S_STRING = 6,                            // STRING
+        S_IDENTIFIER = 7,                        // IDENTIFIER
+        S_VARIABLE = 8,                          // VARIABLE
+        S_TYPE = 9,                              // TYPE
+        S_10_ = 10,                              // ':'
+        S_11_ = 11,                              // '='
+        S_TYPE_PREC = 12,                        // TYPE_PREC
+        S_13_ = 13,                              // '?'
+        S_14_ = 14,                              // '['
+        S_15_ = 15,                              // ']'
+        S_16_ = 16,                              // '('
+        S_17_ = 17,                              // ')'
+        S_18_ = 18,                              // '+'
+        S_19_ = 19,                              // '-'
+        S_20_ = 20,                              // '*'
+        S_21_ = 21,                              // '/'
+        S_22_ = 22,                              // '%'
+        S_UNARY = 23,                            // UNARY
+        S_24_ = 24,                              // '`'
+        S_25_ = 25,                              // ','
+        S_26_ = 26,                              // '~'
+        S_27_ = 27,                              // ';'
+        S_YYACCEPT = 28,                         // $accept
+        S_vars = 29,                             // vars
+        S_type = 30,                             // type
+        S_type_list = 31,                        // type_list
+        S_expr = 32,                             // expr
+        S_arg_list = 33,                         // arg_list
+        S_expr_list = 34,                        // expr_list
+        S_var_list = 35,                         // var_list
+        S_stmt = 36,                             // stmt
+        S_scope = 37                             // scope
       };
     };
 
@@ -576,15 +593,24 @@ namespace parser {
       case symbol_kind::S_STRING: // STRING
       case symbol_kind::S_IDENTIFIER: // IDENTIFIER
       case symbol_kind::S_VARIABLE: // VARIABLE
+      case symbol_kind::S_TYPE: // TYPE
       case symbol_kind::S_vars: // vars
       case symbol_kind::S_expr: // expr
         value.move< std::shared_ptr<object::Object> > (std::move (that.value));
+        break;
+
+      case symbol_kind::S_type: // type
+        value.move< std::shared_ptr<type::Type> > (std::move (that.value));
         break;
 
       case symbol_kind::S_arg_list: // arg_list
       case symbol_kind::S_expr_list: // expr_list
       case symbol_kind::S_var_list: // var_list
         value.move< std::vector<std::shared_ptr<object::Object>> > (std::move (that.value));
+        break;
+
+      case symbol_kind::S_type_list: // type_list
+        value.move< std::vector<std::shared_ptr<type::Type>> > (std::move (that.value));
         break;
 
       default:
@@ -625,6 +651,20 @@ namespace parser {
 #endif
 
 #if 201103L <= YY_CPLUSPLUS
+      basic_symbol (typename Base::kind_type t, std::shared_ptr<type::Type>&& v, location_type&& l)
+        : Base (t)
+        , value (std::move (v))
+        , location (std::move (l))
+      {}
+#else
+      basic_symbol (typename Base::kind_type t, const std::shared_ptr<type::Type>& v, const location_type& l)
+        : Base (t)
+        , value (v)
+        , location (l)
+      {}
+#endif
+
+#if 201103L <= YY_CPLUSPLUS
       basic_symbol (typename Base::kind_type t, std::vector<std::shared_ptr<object::Object>>&& v, location_type&& l)
         : Base (t)
         , value (std::move (v))
@@ -632,6 +672,20 @@ namespace parser {
       {}
 #else
       basic_symbol (typename Base::kind_type t, const std::vector<std::shared_ptr<object::Object>>& v, const location_type& l)
+        : Base (t)
+        , value (v)
+        , location (l)
+      {}
+#endif
+
+#if 201103L <= YY_CPLUSPLUS
+      basic_symbol (typename Base::kind_type t, std::vector<std::shared_ptr<type::Type>>&& v, location_type&& l)
+        : Base (t)
+        , value (std::move (v))
+        , location (std::move (l))
+      {}
+#else
+      basic_symbol (typename Base::kind_type t, const std::vector<std::shared_ptr<type::Type>>& v, const location_type& l)
         : Base (t)
         , value (v)
         , location (l)
@@ -667,15 +721,24 @@ switch (yykind)
       case symbol_kind::S_STRING: // STRING
       case symbol_kind::S_IDENTIFIER: // IDENTIFIER
       case symbol_kind::S_VARIABLE: // VARIABLE
+      case symbol_kind::S_TYPE: // TYPE
       case symbol_kind::S_vars: // vars
       case symbol_kind::S_expr: // expr
         value.template destroy< std::shared_ptr<object::Object> > ();
+        break;
+
+      case symbol_kind::S_type: // type
+        value.template destroy< std::shared_ptr<type::Type> > ();
         break;
 
       case symbol_kind::S_arg_list: // arg_list
       case symbol_kind::S_expr_list: // expr_list
       case symbol_kind::S_var_list: // var_list
         value.template destroy< std::vector<std::shared_ptr<object::Object>> > ();
+        break;
+
+      case symbol_kind::S_type_list: // type_list
+        value.template destroy< std::vector<std::shared_ptr<type::Type>> > ();
         break;
 
       default:
@@ -776,9 +839,11 @@ switch (yykind)
       {
 #if !defined _MSC_VER || defined __clang__
         YY_ASSERT (tok == token::YYEOF
-                   || (token::YYerror <= tok && tok <= token::YYUNDEF)
+                   || (token::YYerror <= tok && tok <= token::FORWARD_DECLARE)
                    || tok == 58
                    || tok == 61
+                   || tok == token::TYPE_PREC
+                   || tok == 63
                    || tok == 91
                    || tok == 93
                    || (40 <= tok && tok <= 41)
@@ -789,8 +854,8 @@ switch (yykind)
                    || tok == 37
                    || tok == token::UNARY
                    || tok == 96
-                   || tok == 126
                    || tok == 44
+                   || tok == 126
                    || tok == 59);
 #endif
       }
@@ -803,7 +868,7 @@ switch (yykind)
 #endif
       {
 #if !defined _MSC_VER || defined __clang__
-        YY_ASSERT ((token::INTEGER <= tok && tok <= token::VARIABLE));
+        YY_ASSERT ((token::INTEGER <= tok && tok <= token::TYPE));
 #endif
       }
     };
@@ -902,6 +967,21 @@ switch (yykind)
 #if 201103L <= YY_CPLUSPLUS
       static
       symbol_type
+      make_FORWARD_DECLARE (location_type l)
+      {
+        return symbol_type (token::FORWARD_DECLARE, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_FORWARD_DECLARE (const location_type& l)
+      {
+        return symbol_type (token::FORWARD_DECLARE, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
       make_INTEGER (std::shared_ptr<object::Object> v, location_type l)
       {
         return symbol_type (token::INTEGER, std::move (v), std::move (l));
@@ -972,6 +1052,36 @@ switch (yykind)
       make_VARIABLE (const std::shared_ptr<object::Object>& v, const location_type& l)
       {
         return symbol_type (token::VARIABLE, v, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_TYPE (std::shared_ptr<object::Object> v, location_type l)
+      {
+        return symbol_type (token::TYPE, std::move (v), std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_TYPE (const std::shared_ptr<object::Object>& v, const location_type& l)
+      {
+        return symbol_type (token::TYPE, v, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_TYPE_PREC (location_type l)
+      {
+        return symbol_type (token::TYPE_PREC, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_TYPE_PREC (const location_type& l)
+      {
+        return symbol_type (token::TYPE_PREC, l);
       }
 #endif
 #if 201103L <= YY_CPLUSPLUS
@@ -1059,7 +1169,7 @@ switch (yykind)
     // Tables.
     // YYPACT[STATE-NUM] -- Index in YYTABLE of the portion describing
     // STATE-NUM.
-    static const signed char yypact_[];
+    static const short yypact_[];
 
     // YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
     // Performed when YYTABLE does not specify something else to do.  Zero
@@ -1092,7 +1202,7 @@ switch (yykind)
 
 #if YYDEBUG
     // YYRLINE[YYN] -- Source line where rule number YYN was defined.
-    static const signed char yyrline_[];
+    static const unsigned char yyrline_[];
     /// Report on the debug stream that the rule \a r is going to be reduced.
     virtual void yy_reduce_print_ (int r) const;
     /// Print the state stack on the debug stream.
@@ -1319,8 +1429,8 @@ switch (yykind)
     /// Constants.
     enum
     {
-      yylast_ = 113,     ///< Last index in yytable_.
-      yynnts_ = 8,  ///< Number of nonterminal symbols.
+      yylast_ = 179,     ///< Last index in yytable_.
+      yynnts_ = 10,  ///< Number of nonterminal symbols.
       yyfinal_ = 2 ///< Termination state number.
     };
 
@@ -1334,7 +1444,7 @@ switch (yykind)
 
 #line 6 "parser.y"
 } // parser
-#line 1338 "parser.hpp"
+#line 1448 "parser.hpp"
 
 
 

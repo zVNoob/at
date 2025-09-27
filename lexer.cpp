@@ -10,6 +10,7 @@
 #include "integer.hpp"
 #include "fraction.hpp"
 #include "string.hpp"
+#include "type.hpp"
 #include "variable.hpp"
 
 #include <memory>
@@ -64,6 +65,7 @@ void Lexer::process_string(parser::Parser::value_type* yylval,parser::Parser::lo
   yylloc->end = next_char.second;
 }
 
+
 int Lexer::process_multichar_token(char current_char,
                                    parser::Parser::value_type* yylval,
                                    parser::Parser::location_type* yylloc) {
@@ -96,13 +98,33 @@ int Lexer::process_multichar_token(char current_char,
   return token_type;
 }
 
-std::pair<int, std::shared_ptr<variable::Variable>> Lexer::process_identifier(std::string s) {
+std::pair<int, std::shared_ptr<object::Object>> Lexer::process_identifier(std::string s) {
   auto [obj,found] = current_scope->get_variable(s);
   auto var_ptr = std::make_shared<variable::Variable>(obj);
-  if (found) return {parser::Parser::token::VARIABLE, std::move(var_ptr)};
+  if (found) {
+    if (dynamic_cast<type::Type*>(var_ptr.get()->get_value().get()) != nullptr) 
+      return {parser::Parser::token::TYPE, var_ptr->get_value()};
+    return {parser::Parser::token::VARIABLE, std::move(var_ptr)};
+  }
   else return {parser::Parser::token::IDENTIFIER, std::move(var_ptr)};
 }
 
+int lookup(std::string s, parser::Parser::location_type* yylloc) {
+  if (s == "?:") return parser::Parser::token::FORWARD_DECLARE;
+  throw error::eval_error("Unknown operator: " + s,*yylloc);
+}
+
+int Lexer::process_keyword(char current_char, parser::Parser::location_type* yylloc) {
+  pending_char = get_char();
+  if (keyword.find(pending_char.first) == std::string::npos) {
+    return current_char;
+  }
+  std::string s = std::string(1, current_char) + std::string(1, pending_char.first);
+  yylloc->end = pending_char.second;
+  pending_char.first = 0;
+  return lookup(s, yylloc);
+}
+  
 
 int Lexer::pure_lex(parser::Parser::value_type* yylval,parser::Parser::location_type* yylloc) {
   std::pair<char, parser::position> p = {0, yylloc->end};
@@ -120,7 +142,7 @@ int Lexer::pure_lex(parser::Parser::value_type* yylval,parser::Parser::location_
   char current_char = p.first;
 
   if (current_char == -1) return parser::Parser::token::YYEOF;
-  if (keyword.find(current_char) != std::string::npos)  return current_char;
+  if (keyword.find(current_char) != std::string::npos)  return process_keyword(current_char, yylloc);
   
   if (current_char == '\"') {
     process_string(yylval,yylloc);
@@ -130,8 +152,12 @@ int Lexer::pure_lex(parser::Parser::value_type* yylval,parser::Parser::location_
   return process_multichar_token(current_char, yylval, yylloc);
 }
 
-int Lexer::lex(parser::Parser::value_type* yylval,parser::Parser::location_type* yylloc) {
+int Lexer::scope_lex(parser::Parser::value_type* yylval,parser::Parser::location_type* yylloc) {
   return pure_lex(yylval,yylloc);
+}
+
+int Lexer::lex(parser::Parser::value_type* yylval,parser::Parser::location_type* yylloc) {
+  return scope_lex(yylval,yylloc);
 }
 char StreamLexer::next() {
   char c = 0;

@@ -3,7 +3,6 @@
 #include "object.hpp"
 #include "callable.hpp"
 #include <memory>
-#include <source_location>
 #include "parser.hpp"
 #include "type.hpp" // IWYU pragma: keep
 #include "typed_func.hpp"
@@ -15,8 +14,6 @@ namespace tuple {
 using namespace object;
 using namespace callable;
 using namespace internal_func;
-
-static std::string filename = std::source_location::current().file_name();
 
 std::shared_ptr<Object> on_assign(arg_list args) {
   // 1st arg is always variable

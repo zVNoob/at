@@ -13,4 +13,17 @@ std::pair<variable::Variable,bool> Scope::get_variable(std::string name,bool cur
   }
   return {variable::Variable(name, &it->second.front().value, current_scope, members[name].front().readonly),true};
 }
+
+void Scope::add_statement(std::shared_ptr<ast::Ast> statement) {
+  statements.push_back(statement);
+}
+
+std::shared_ptr<object::Object> Scope::eval() {
+  std::shared_ptr<object::Object> result = nullptr;
+  for (auto& statement : statements) {
+    result = statement->eval();
+  }
+  return result;
+}
+
 }

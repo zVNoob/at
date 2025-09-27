@@ -37,7 +37,7 @@
 
 
 // First part of user prologue.
-#line 28 "parser.y"
+#line 29 "parser.y"
 
 #include "lexer.hpp"
 #include "error.hpp"
@@ -46,12 +46,13 @@
 #include "variable.hpp"
 #include "tuple.hpp"
 #include "array.hpp"
+#include "type.hpp"
 
 #include "parser_helper.hpp"
 #include <iostream>
 #include <memory>
 
-#line 55 "parser.cpp"
+#line 56 "parser.cpp"
 
 
 #include "parser.hpp"
@@ -149,7 +150,7 @@
 
 #line 6 "parser.y"
 namespace parser {
-#line 153 "parser.cpp"
+#line 154 "parser.cpp"
 
   /// Build a parser object.
   Parser::Parser (lexer::Lexer* lexer_yyarg, error::ErrorReporter* err_rp_yyarg)
@@ -187,15 +188,24 @@ namespace parser {
       case symbol_kind::S_STRING: // STRING
       case symbol_kind::S_IDENTIFIER: // IDENTIFIER
       case symbol_kind::S_VARIABLE: // VARIABLE
+      case symbol_kind::S_TYPE: // TYPE
       case symbol_kind::S_vars: // vars
       case symbol_kind::S_expr: // expr
         value.copy< std::shared_ptr<object::Object> > (YY_MOVE (that.value));
+        break;
+
+      case symbol_kind::S_type: // type
+        value.copy< std::shared_ptr<type::Type> > (YY_MOVE (that.value));
         break;
 
       case symbol_kind::S_arg_list: // arg_list
       case symbol_kind::S_expr_list: // expr_list
       case symbol_kind::S_var_list: // var_list
         value.copy< std::vector<std::shared_ptr<object::Object>> > (YY_MOVE (that.value));
+        break;
+
+      case symbol_kind::S_type_list: // type_list
+        value.copy< std::vector<std::shared_ptr<type::Type>> > (YY_MOVE (that.value));
         break;
 
       default:
@@ -234,15 +244,24 @@ namespace parser {
       case symbol_kind::S_STRING: // STRING
       case symbol_kind::S_IDENTIFIER: // IDENTIFIER
       case symbol_kind::S_VARIABLE: // VARIABLE
+      case symbol_kind::S_TYPE: // TYPE
       case symbol_kind::S_vars: // vars
       case symbol_kind::S_expr: // expr
         value.move< std::shared_ptr<object::Object> > (YY_MOVE (s.value));
+        break;
+
+      case symbol_kind::S_type: // type
+        value.move< std::shared_ptr<type::Type> > (YY_MOVE (s.value));
         break;
 
       case symbol_kind::S_arg_list: // arg_list
       case symbol_kind::S_expr_list: // expr_list
       case symbol_kind::S_var_list: // var_list
         value.move< std::vector<std::shared_ptr<object::Object>> > (YY_MOVE (s.value));
+        break;
+
+      case symbol_kind::S_type_list: // type_list
+        value.move< std::vector<std::shared_ptr<type::Type>> > (YY_MOVE (s.value));
         break;
 
       default:
@@ -351,15 +370,24 @@ namespace parser {
       case symbol_kind::S_STRING: // STRING
       case symbol_kind::S_IDENTIFIER: // IDENTIFIER
       case symbol_kind::S_VARIABLE: // VARIABLE
+      case symbol_kind::S_TYPE: // TYPE
       case symbol_kind::S_vars: // vars
       case symbol_kind::S_expr: // expr
         value.YY_MOVE_OR_COPY< std::shared_ptr<object::Object> > (YY_MOVE (that.value));
+        break;
+
+      case symbol_kind::S_type: // type
+        value.YY_MOVE_OR_COPY< std::shared_ptr<type::Type> > (YY_MOVE (that.value));
         break;
 
       case symbol_kind::S_arg_list: // arg_list
       case symbol_kind::S_expr_list: // expr_list
       case symbol_kind::S_var_list: // var_list
         value.YY_MOVE_OR_COPY< std::vector<std::shared_ptr<object::Object>> > (YY_MOVE (that.value));
+        break;
+
+      case symbol_kind::S_type_list: // type_list
+        value.YY_MOVE_OR_COPY< std::vector<std::shared_ptr<type::Type>> > (YY_MOVE (that.value));
         break;
 
       default:
@@ -382,15 +410,24 @@ namespace parser {
       case symbol_kind::S_STRING: // STRING
       case symbol_kind::S_IDENTIFIER: // IDENTIFIER
       case symbol_kind::S_VARIABLE: // VARIABLE
+      case symbol_kind::S_TYPE: // TYPE
       case symbol_kind::S_vars: // vars
       case symbol_kind::S_expr: // expr
         value.move< std::shared_ptr<object::Object> > (YY_MOVE (that.value));
+        break;
+
+      case symbol_kind::S_type: // type
+        value.move< std::shared_ptr<type::Type> > (YY_MOVE (that.value));
         break;
 
       case symbol_kind::S_arg_list: // arg_list
       case symbol_kind::S_expr_list: // expr_list
       case symbol_kind::S_var_list: // var_list
         value.move< std::vector<std::shared_ptr<object::Object>> > (YY_MOVE (that.value));
+        break;
+
+      case symbol_kind::S_type_list: // type_list
+        value.move< std::vector<std::shared_ptr<type::Type>> > (YY_MOVE (that.value));
         break;
 
       default:
@@ -413,15 +450,24 @@ namespace parser {
       case symbol_kind::S_STRING: // STRING
       case symbol_kind::S_IDENTIFIER: // IDENTIFIER
       case symbol_kind::S_VARIABLE: // VARIABLE
+      case symbol_kind::S_TYPE: // TYPE
       case symbol_kind::S_vars: // vars
       case symbol_kind::S_expr: // expr
         value.copy< std::shared_ptr<object::Object> > (that.value);
+        break;
+
+      case symbol_kind::S_type: // type
+        value.copy< std::shared_ptr<type::Type> > (that.value);
         break;
 
       case symbol_kind::S_arg_list: // arg_list
       case symbol_kind::S_expr_list: // expr_list
       case symbol_kind::S_var_list: // var_list
         value.copy< std::vector<std::shared_ptr<object::Object>> > (that.value);
+        break;
+
+      case symbol_kind::S_type_list: // type_list
+        value.copy< std::vector<std::shared_ptr<type::Type>> > (that.value);
         break;
 
       default:
@@ -443,15 +489,24 @@ namespace parser {
       case symbol_kind::S_STRING: // STRING
       case symbol_kind::S_IDENTIFIER: // IDENTIFIER
       case symbol_kind::S_VARIABLE: // VARIABLE
+      case symbol_kind::S_TYPE: // TYPE
       case symbol_kind::S_vars: // vars
       case symbol_kind::S_expr: // expr
         value.move< std::shared_ptr<object::Object> > (that.value);
+        break;
+
+      case symbol_kind::S_type: // type
+        value.move< std::shared_ptr<type::Type> > (that.value);
         break;
 
       case symbol_kind::S_arg_list: // arg_list
       case symbol_kind::S_expr_list: // expr_list
       case symbol_kind::S_var_list: // var_list
         value.move< std::vector<std::shared_ptr<object::Object>> > (that.value);
+        break;
+
+      case symbol_kind::S_type_list: // type_list
+        value.move< std::vector<std::shared_ptr<type::Type>> > (that.value);
         break;
 
       default:
@@ -717,15 +772,24 @@ namespace parser {
       case symbol_kind::S_STRING: // STRING
       case symbol_kind::S_IDENTIFIER: // IDENTIFIER
       case symbol_kind::S_VARIABLE: // VARIABLE
+      case symbol_kind::S_TYPE: // TYPE
       case symbol_kind::S_vars: // vars
       case symbol_kind::S_expr: // expr
         yylhs.value.emplace< std::shared_ptr<object::Object> > ();
+        break;
+
+      case symbol_kind::S_type: // type
+        yylhs.value.emplace< std::shared_ptr<type::Type> > ();
         break;
 
       case symbol_kind::S_arg_list: // arg_list
       case symbol_kind::S_expr_list: // expr_list
       case symbol_kind::S_var_list: // var_list
         yylhs.value.emplace< std::vector<std::shared_ptr<object::Object>> > ();
+        break;
+
+      case symbol_kind::S_type_list: // type_list
+        yylhs.value.emplace< std::vector<std::shared_ptr<type::Type>> > ();
         break;
 
       default:
@@ -749,187 +813,253 @@ namespace parser {
           switch (yyn)
             {
   case 2: // vars: VARIABLE
-#line 70 "parser.y"
+#line 79 "parser.y"
                { yylhs.value.as < std::shared_ptr<object::Object> > () = yystack_[0].value.as < std::shared_ptr<object::Object> > (); }
-#line 755 "parser.cpp"
+#line 819 "parser.cpp"
     break;
 
   case 3: // vars: expr '[' arg_list ']'
-#line 71 "parser.y"
+#line 80 "parser.y"
                             { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_call(yystack_[3].value.as < std::shared_ptr<object::Object> > (),yystack_[1].value.as < std::vector<std::shared_ptr<object::Object>> > (),"[]",yystack_[2].location); }
-#line 761 "parser.cpp"
+#line 825 "parser.cpp"
     break;
 
   case 4: // vars: expr '(' arg_list ')'
-#line 72 "parser.y"
-                            { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_call(yystack_[3].value.as < std::shared_ptr<object::Object> > (),yystack_[1].value.as < std::vector<std::shared_ptr<object::Object>> > (),"()",yystack_[2].location); }
-#line 767 "parser.cpp"
-    break;
-
-  case 5: // expr: INTEGER
-#line 74 "parser.y"
-              { yylhs.value.as < std::shared_ptr<object::Object> > () = yystack_[0].value.as < std::shared_ptr<object::Object> > (); }
-#line 773 "parser.cpp"
-    break;
-
-  case 6: // expr: FRACTION
-#line 75 "parser.y"
-               { yylhs.value.as < std::shared_ptr<object::Object> > () = yystack_[0].value.as < std::shared_ptr<object::Object> > (); }
-#line 779 "parser.cpp"
-    break;
-
-  case 7: // expr: STRING
-#line 76 "parser.y"
-             { yylhs.value.as < std::shared_ptr<object::Object> > () = yystack_[0].value.as < std::shared_ptr<object::Object> > (); }
-#line 785 "parser.cpp"
-    break;
-
-  case 8: // expr: vars
-#line 77 "parser.y"
-           { yylhs.value.as < std::shared_ptr<object::Object> > () = static_pointer_cast<variable::Variable>(yystack_[0].value.as < std::shared_ptr<object::Object> > ())->get_value(); }
-#line 791 "parser.cpp"
-    break;
-
-  case 9: // expr: expr '+' expr
-#line 78 "parser.y"
-                    { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_binary_op(yystack_[2].value.as < std::shared_ptr<object::Object> > (),yystack_[0].value.as < std::shared_ptr<object::Object> > (),"+",yystack_[1].location); }
-#line 797 "parser.cpp"
-    break;
-
-  case 10: // expr: expr '-' expr
-#line 79 "parser.y"
-                    { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_binary_op(yystack_[2].value.as < std::shared_ptr<object::Object> > (),yystack_[0].value.as < std::shared_ptr<object::Object> > (),"-",yystack_[1].location); }
-#line 803 "parser.cpp"
-    break;
-
-  case 11: // expr: expr '*' expr
-#line 80 "parser.y"
-                    { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_binary_op(yystack_[2].value.as < std::shared_ptr<object::Object> > (),yystack_[0].value.as < std::shared_ptr<object::Object> > (),"*",yystack_[1].location); }
-#line 809 "parser.cpp"
-    break;
-
-  case 12: // expr: expr '/' expr
 #line 81 "parser.y"
-                    { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_binary_op(yystack_[2].value.as < std::shared_ptr<object::Object> > (),yystack_[0].value.as < std::shared_ptr<object::Object> > (),"/",yystack_[1].location); }
-#line 815 "parser.cpp"
+                            { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_call(yystack_[3].value.as < std::shared_ptr<object::Object> > (),yystack_[1].value.as < std::vector<std::shared_ptr<object::Object>> > (),"()",yystack_[2].location); }
+#line 831 "parser.cpp"
     break;
 
-  case 13: // expr: expr '%' expr
-#line 82 "parser.y"
-                    { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_binary_op(yystack_[2].value.as < std::shared_ptr<object::Object> > (),yystack_[0].value.as < std::shared_ptr<object::Object> > (),"%",yystack_[1].location); }
-#line 821 "parser.cpp"
-    break;
-
-  case 14: // expr: '(' expr ')'
+  case 5: // type: TYPE
 #line 83 "parser.y"
-                   { yylhs.value.as < std::shared_ptr<object::Object> > () = yystack_[1].value.as < std::shared_ptr<object::Object> > (); }
-#line 827 "parser.cpp"
+           { yylhs.value.as < std::shared_ptr<type::Type> > () = std::static_pointer_cast<type::Type>(yystack_[0].value.as < std::shared_ptr<object::Object> > ()); }
+#line 837 "parser.cpp"
     break;
 
-  case 15: // expr: '+' expr
+  case 6: // type: '`' expr
 #line 84 "parser.y"
-                           { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_unary_op(yystack_[0].value.as < std::shared_ptr<object::Object> > (),"+",yystack_[1].location); }
-#line 833 "parser.cpp"
+               { yylhs.value.as < std::shared_ptr<type::Type> > () = yystack_[0].value.as < std::shared_ptr<object::Object> > ()->type; }
+#line 843 "parser.cpp"
     break;
 
-  case 16: // expr: '-' expr
+  case 7: // type: '[' type ']'
 #line 85 "parser.y"
-                           { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_unary_op(yystack_[0].value.as < std::shared_ptr<object::Object> > (),"-",yystack_[1].location); }
-#line 839 "parser.cpp"
+                   { yylhs.value.as < std::shared_ptr<type::Type> > () = array::get_Array_type(yystack_[1].value.as < std::shared_ptr<type::Type> > ()); }
+#line 849 "parser.cpp"
     break;
 
-  case 17: // expr: '~' expr
+  case 8: // type: '(' type_list ')'
 #line 86 "parser.y"
-                           { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_unary_op(yystack_[0].value.as < std::shared_ptr<object::Object> > (),"~",yystack_[1].location); }
-#line 845 "parser.cpp"
+                        { yylhs.value.as < std::shared_ptr<type::Type> > () = tuple::get_Tuple_type(yystack_[1].value.as < std::vector<std::shared_ptr<type::Type>> > ()); }
+#line 855 "parser.cpp"
     break;
 
-  case 18: // expr: '(' expr_list ')'
-#line 87 "parser.y"
-                        { yylhs.value.as < std::shared_ptr<object::Object> > () = make_shared<tuple::Tuple>(yystack_[1].value.as < std::vector<std::shared_ptr<object::Object>> > ()); }
-#line 851 "parser.cpp"
-    break;
-
-  case 19: // expr: '[' arg_list ']'
+  case 9: // type_list: type ',' type
 #line 88 "parser.y"
-                       { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_build_array(yystack_[1].value.as < std::vector<std::shared_ptr<object::Object>> > (),yystack_[1].location); }
-#line 857 "parser.cpp"
+                         { yylhs.value.as < std::vector<std::shared_ptr<type::Type>> > () = std::vector<std::shared_ptr<type::Type>>{yystack_[2].value.as < std::shared_ptr<type::Type> > (),yystack_[0].value.as < std::shared_ptr<type::Type> > ()}; }
+#line 861 "parser.cpp"
     break;
 
-  case 20: // arg_list: expr
-#line 90 "parser.y"
-               { yylhs.value.as < std::vector<std::shared_ptr<object::Object>> > () = std::vector<std::shared_ptr<object::Object>>{yystack_[0].value.as < std::shared_ptr<object::Object> > ()}; }
-#line 863 "parser.cpp"
+  case 10: // type_list: type_list ',' type
+#line 89 "parser.y"
+                              { yylhs.value.as < std::vector<std::shared_ptr<type::Type>> > () = std::move(yystack_[2].value.as < std::vector<std::shared_ptr<type::Type>> > ()); yylhs.value.as < std::vector<std::shared_ptr<type::Type>> > ().push_back(yystack_[0].value.as < std::shared_ptr<type::Type> > ()); }
+#line 867 "parser.cpp"
     break;
 
-  case 21: // arg_list: arg_list ',' expr
+  case 11: // expr: INTEGER
 #line 91 "parser.y"
-                            { yylhs.value.as < std::vector<std::shared_ptr<object::Object>> > () = std::move(yystack_[2].value.as < std::vector<std::shared_ptr<object::Object>> > ()); yylhs.value.as < std::vector<std::shared_ptr<object::Object>> > ().push_back(yystack_[0].value.as < std::shared_ptr<object::Object> > ()); }
-#line 869 "parser.cpp"
+              { yylhs.value.as < std::shared_ptr<object::Object> > () = yystack_[0].value.as < std::shared_ptr<object::Object> > (); }
+#line 873 "parser.cpp"
     break;
 
-  case 22: // expr_list: expr ',' expr
+  case 12: // expr: FRACTION
+#line 92 "parser.y"
+               { yylhs.value.as < std::shared_ptr<object::Object> > () = yystack_[0].value.as < std::shared_ptr<object::Object> > (); }
+#line 879 "parser.cpp"
+    break;
+
+  case 13: // expr: STRING
 #line 93 "parser.y"
-                         { yylhs.value.as < std::vector<std::shared_ptr<object::Object>> > () = std::vector<std::shared_ptr<object::Object>>{yystack_[2].value.as < std::shared_ptr<object::Object> > (),yystack_[0].value.as < std::shared_ptr<object::Object> > ()}; }
-#line 875 "parser.cpp"
+             { yylhs.value.as < std::shared_ptr<object::Object> > () = yystack_[0].value.as < std::shared_ptr<object::Object> > (); }
+#line 885 "parser.cpp"
     break;
 
-  case 23: // expr_list: expr_list ',' expr
+  case 14: // expr: vars
 #line 94 "parser.y"
-                              { yylhs.value.as < std::vector<std::shared_ptr<object::Object>> > () = std::move(yystack_[2].value.as < std::vector<std::shared_ptr<object::Object>> > ()); yylhs.value.as < std::vector<std::shared_ptr<object::Object>> > ().push_back(yystack_[0].value.as < std::shared_ptr<object::Object> > ()); }
-#line 881 "parser.cpp"
+           { yylhs.value.as < std::shared_ptr<object::Object> > () = static_pointer_cast<variable::Variable>(yystack_[0].value.as < std::shared_ptr<object::Object> > ())->get_value(); }
+#line 891 "parser.cpp"
     break;
 
-  case 24: // var_list: IDENTIFIER
+  case 15: // expr: expr '+' expr
+#line 95 "parser.y"
+                    { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_binary_op(yystack_[2].value.as < std::shared_ptr<object::Object> > (),yystack_[0].value.as < std::shared_ptr<object::Object> > (),"+",yystack_[1].location); }
+#line 897 "parser.cpp"
+    break;
+
+  case 16: // expr: expr '-' expr
 #line 96 "parser.y"
-                     { yylhs.value.as < std::vector<std::shared_ptr<object::Object>> > () = std::vector<std::shared_ptr<object::Object>>{yystack_[0].value.as < std::shared_ptr<object::Object> > ()}; }
-#line 887 "parser.cpp"
+                    { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_binary_op(yystack_[2].value.as < std::shared_ptr<object::Object> > (),yystack_[0].value.as < std::shared_ptr<object::Object> > (),"-",yystack_[1].location); }
+#line 903 "parser.cpp"
     break;
 
-  case 25: // var_list: vars
+  case 17: // expr: expr '*' expr
 #line 97 "parser.y"
-               { yylhs.value.as < std::vector<std::shared_ptr<object::Object>> > () = std::vector<std::shared_ptr<object::Object>>{yystack_[0].value.as < std::shared_ptr<object::Object> > ()}; }
-#line 893 "parser.cpp"
+                    { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_binary_op(yystack_[2].value.as < std::shared_ptr<object::Object> > (),yystack_[0].value.as < std::shared_ptr<object::Object> > (),"*",yystack_[1].location); }
+#line 909 "parser.cpp"
     break;
 
-  case 26: // var_list: var_list ',' IDENTIFIER
+  case 18: // expr: expr '/' expr
 #line 98 "parser.y"
-                                  { yylhs.value.as < std::vector<std::shared_ptr<object::Object>> > () = std::move(yystack_[2].value.as < std::vector<std::shared_ptr<object::Object>> > ()); yylhs.value.as < std::vector<std::shared_ptr<object::Object>> > ().push_back(yystack_[0].value.as < std::shared_ptr<object::Object> > ()); }
-#line 899 "parser.cpp"
+                    { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_binary_op(yystack_[2].value.as < std::shared_ptr<object::Object> > (),yystack_[0].value.as < std::shared_ptr<object::Object> > (),"/",yystack_[1].location); }
+#line 915 "parser.cpp"
     break;
 
-  case 27: // var_list: var_list ',' vars
+  case 19: // expr: expr '%' expr
 #line 99 "parser.y"
-                            { yylhs.value.as < std::vector<std::shared_ptr<object::Object>> > () = std::move(yystack_[2].value.as < std::vector<std::shared_ptr<object::Object>> > ()); yylhs.value.as < std::vector<std::shared_ptr<object::Object>> > ().push_back(yystack_[0].value.as < std::shared_ptr<object::Object> > ()); }
-#line 905 "parser.cpp"
+                    { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_binary_op(yystack_[2].value.as < std::shared_ptr<object::Object> > (),yystack_[0].value.as < std::shared_ptr<object::Object> > (),"%",yystack_[1].location); }
+#line 921 "parser.cpp"
     break;
 
-  case 29: // stmt: expr
-#line 103 "parser.y"
-           { err_rp->orphan_value(yystack_[0].value.as < std::shared_ptr<object::Object> > ()); }
-#line 911 "parser.cpp"
+  case 20: // expr: '(' expr ')'
+#line 100 "parser.y"
+                   { yylhs.value.as < std::shared_ptr<object::Object> > () = yystack_[1].value.as < std::shared_ptr<object::Object> > (); }
+#line 927 "parser.cpp"
     break;
 
-  case 30: // stmt: IDENTIFIER
-#line 104 "parser.y"
-                 { throw error::eval_error("Undefined variable: " + static_pointer_cast<variable::Variable>(yystack_[0].value.as < std::shared_ptr<object::Object> > ())->name, yystack_[0].location); }
-#line 917 "parser.cpp"
-    break;
-
-  case 31: // stmt: var_list '=' expr
-#line 105 "parser.y"
-                        { exec_assign(yystack_[2].value.as < std::vector<std::shared_ptr<object::Object>> > (),yystack_[0].value.as < std::shared_ptr<object::Object> > (),yystack_[1].location); }
-#line 923 "parser.cpp"
-    break;
-
-  case 32: // stmt: var_list ':' expr
-#line 106 "parser.y"
-                        { exec_declare(yystack_[2].value.as < std::vector<std::shared_ptr<object::Object>> > (),yystack_[0].value.as < std::shared_ptr<object::Object> > (),lexer,yystack_[1].location); }
-#line 929 "parser.cpp"
-    break;
-
-
+  case 21: // expr: '+' expr
+#line 101 "parser.y"
+                           { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_unary_op(yystack_[0].value.as < std::shared_ptr<object::Object> > (),"+",yystack_[1].location); }
 #line 933 "parser.cpp"
+    break;
+
+  case 22: // expr: '-' expr
+#line 102 "parser.y"
+                           { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_unary_op(yystack_[0].value.as < std::shared_ptr<object::Object> > (),"-",yystack_[1].location); }
+#line 939 "parser.cpp"
+    break;
+
+  case 23: // expr: '~' expr
+#line 103 "parser.y"
+                           { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_unary_op(yystack_[0].value.as < std::shared_ptr<object::Object> > (),"~",yystack_[1].location); }
+#line 945 "parser.cpp"
+    break;
+
+  case 24: // expr: '(' expr_list ')'
+#line 104 "parser.y"
+                        { yylhs.value.as < std::shared_ptr<object::Object> > () = make_shared<tuple::Tuple>(yystack_[1].value.as < std::vector<std::shared_ptr<object::Object>> > ()); }
+#line 951 "parser.cpp"
+    break;
+
+  case 25: // expr: '[' arg_list ']'
+#line 105 "parser.y"
+                       { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_build_array(yystack_[1].value.as < std::vector<std::shared_ptr<object::Object>> > (),yystack_[1].location); }
+#line 957 "parser.cpp"
+    break;
+
+  case 26: // expr: type '(' arg_list ')'
+#line 106 "parser.y"
+                            { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_constructor(yystack_[3].value.as < std::shared_ptr<type::Type> > (),yystack_[1].value.as < std::vector<std::shared_ptr<object::Object>> > (),yystack_[2].location); }
+#line 963 "parser.cpp"
+    break;
+
+  case 27: // expr: expr '?' expr ':' expr
+#line 107 "parser.y"
+                             { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_conditional(yystack_[4].value.as < std::shared_ptr<object::Object> > (),yystack_[2].value.as < std::shared_ptr<object::Object> > (),yystack_[0].value.as < std::shared_ptr<object::Object> > (),yystack_[3].location); }
+#line 969 "parser.cpp"
+    break;
+
+  case 28: // arg_list: %empty
+#line 109 "parser.y"
+                 { yylhs.value.as < std::vector<std::shared_ptr<object::Object>> > () = std::vector<std::shared_ptr<object::Object>>{}; }
+#line 975 "parser.cpp"
+    break;
+
+  case 29: // arg_list: expr
+#line 110 "parser.y"
+               { yylhs.value.as < std::vector<std::shared_ptr<object::Object>> > () = std::vector<std::shared_ptr<object::Object>>{yystack_[0].value.as < std::shared_ptr<object::Object> > ()}; }
+#line 981 "parser.cpp"
+    break;
+
+  case 30: // arg_list: arg_list ',' expr
+#line 111 "parser.y"
+                            { yylhs.value.as < std::vector<std::shared_ptr<object::Object>> > () = std::move(yystack_[2].value.as < std::vector<std::shared_ptr<object::Object>> > ()); yylhs.value.as < std::vector<std::shared_ptr<object::Object>> > ().push_back(yystack_[0].value.as < std::shared_ptr<object::Object> > ()); }
+#line 987 "parser.cpp"
+    break;
+
+  case 31: // expr_list: expr ',' expr
+#line 113 "parser.y"
+                         { yylhs.value.as < std::vector<std::shared_ptr<object::Object>> > () = std::vector<std::shared_ptr<object::Object>>{yystack_[2].value.as < std::shared_ptr<object::Object> > (),yystack_[0].value.as < std::shared_ptr<object::Object> > ()}; }
+#line 993 "parser.cpp"
+    break;
+
+  case 32: // expr_list: expr_list ',' expr
+#line 114 "parser.y"
+                              { yylhs.value.as < std::vector<std::shared_ptr<object::Object>> > () = std::move(yystack_[2].value.as < std::vector<std::shared_ptr<object::Object>> > ()); yylhs.value.as < std::vector<std::shared_ptr<object::Object>> > ().push_back(yystack_[0].value.as < std::shared_ptr<object::Object> > ()); }
+#line 999 "parser.cpp"
+    break;
+
+  case 33: // var_list: IDENTIFIER
+#line 116 "parser.y"
+                     { yylhs.value.as < std::vector<std::shared_ptr<object::Object>> > () = std::vector<std::shared_ptr<object::Object>>{yystack_[0].value.as < std::shared_ptr<object::Object> > ()}; }
+#line 1005 "parser.cpp"
+    break;
+
+  case 34: // var_list: vars
+#line 117 "parser.y"
+               { yylhs.value.as < std::vector<std::shared_ptr<object::Object>> > () = std::vector<std::shared_ptr<object::Object>>{yystack_[0].value.as < std::shared_ptr<object::Object> > ()}; }
+#line 1011 "parser.cpp"
+    break;
+
+  case 35: // var_list: var_list ',' IDENTIFIER
+#line 118 "parser.y"
+                                  { yylhs.value.as < std::vector<std::shared_ptr<object::Object>> > () = std::move(yystack_[2].value.as < std::vector<std::shared_ptr<object::Object>> > ()); yylhs.value.as < std::vector<std::shared_ptr<object::Object>> > ().push_back(yystack_[0].value.as < std::shared_ptr<object::Object> > ()); }
+#line 1017 "parser.cpp"
+    break;
+
+  case 36: // var_list: var_list ',' vars
+#line 119 "parser.y"
+                            { yylhs.value.as < std::vector<std::shared_ptr<object::Object>> > () = std::move(yystack_[2].value.as < std::vector<std::shared_ptr<object::Object>> > ()); yylhs.value.as < std::vector<std::shared_ptr<object::Object>> > ().push_back(yystack_[0].value.as < std::shared_ptr<object::Object> > ()); }
+#line 1023 "parser.cpp"
+    break;
+
+  case 38: // stmt: expr
+#line 123 "parser.y"
+           { on_orphan_value(yystack_[0].value.as < std::shared_ptr<object::Object> > (),lexer,err_rp); }
+#line 1029 "parser.cpp"
+    break;
+
+  case 39: // stmt: IDENTIFIER
+#line 124 "parser.y"
+                 { throw error::eval_error("Undefined variable: " + static_pointer_cast<variable::Variable>(yystack_[0].value.as < std::shared_ptr<object::Object> > ())->name, yystack_[0].location); }
+#line 1035 "parser.cpp"
+    break;
+
+  case 40: // stmt: var_list '=' expr
+#line 125 "parser.y"
+                        { exec_assign(yystack_[2].value.as < std::vector<std::shared_ptr<object::Object>> > (),yystack_[0].value.as < std::shared_ptr<object::Object> > (),yystack_[1].location); }
+#line 1041 "parser.cpp"
+    break;
+
+  case 41: // stmt: var_list ':' expr
+#line 126 "parser.y"
+                        { exec_declare(yystack_[2].value.as < std::vector<std::shared_ptr<object::Object>> > (),yystack_[0].value.as < std::shared_ptr<object::Object> > (),lexer,yystack_[1].location); }
+#line 1047 "parser.cpp"
+    break;
+
+  case 42: // stmt: var_list FORWARD_DECLARE type
+#line 127 "parser.y"
+                                    { exec_declare(yystack_[2].value.as < std::vector<std::shared_ptr<object::Object>> > (),yystack_[0].value.as < std::shared_ptr<type::Type> > (),lexer,yystack_[1].location); }
+#line 1053 "parser.cpp"
+    break;
+
+  case 43: // stmt: var_list ':' type
+#line 128 "parser.y"
+                        { exec_declare(yystack_[2].value.as < std::vector<std::shared_ptr<object::Object>> > (),yystack_[0].value.as < std::shared_ptr<type::Type> > (),lexer,yystack_[1].location); }
+#line 1059 "parser.cpp"
+    break;
+
+
+#line 1063 "parser.cpp"
 
             default:
               break;
@@ -1281,105 +1411,128 @@ namespace parser {
   }
 
 
-  const signed char Parser::yypact_ninf_ = -9;
+  const signed char Parser::yypact_ninf_ = -32;
 
-  const signed char Parser::yytable_ninf_ = -31;
+  const signed char Parser::yytable_ninf_ = -40;
 
-  const signed char
+  const short
   Parser::yypact_[] =
   {
-      -9,    42,    -9,    -9,    -9,    -9,    -9,    -8,    -9,    76,
-      76,    76,    76,    76,    -6,    95,    -4,    13,    -9,    95,
-      -3,    86,     1,    -9,    -9,    -9,    76,    76,    76,    76,
-      76,    76,    76,    76,    76,    63,    -9,    -9,    76,    -9,
-      76,    -9,    76,     2,     4,    43,    43,    -9,    -9,    -9,
-      95,    95,    -9,    -2,    95,    95,    95,    95,    -9,    -9
+     -32,    63,   -32,   -32,   -32,   -32,   -32,   -24,   -32,   -32,
+     110,   110,   110,   110,   110,   110,     5,    -7,   147,    16,
+      29,   -32,    -9,   147,    10,     4,    41,   124,    58,   -32,
+     -32,   157,   -32,   110,   110,   110,   110,   110,   110,   110,
+     110,   110,    38,   110,   110,    87,   -32,   -32,   -32,   110,
+      38,   -32,    38,   -32,   110,   -32,   110,    59,   137,    36,
+      61,     1,     1,   -32,   -32,   -32,    38,    38,   -32,    -7,
+     147,   147,   -32,    21,   147,   147,   -32,   -32,   147,   147,
+     -32,   110,   -32,   -32,    13,     9,   147
   };
 
   const signed char
   Parser::yydefact_[] =
   {
-      34,     0,     1,    33,     5,     6,     7,    24,     2,     0,
-       0,     0,     0,     0,     8,    29,     0,     0,     8,    20,
-       0,     0,     0,    15,    16,    17,     0,     0,     0,     0,
-       0,     0,     0,     0,     0,     0,    35,    19,     0,    14,
-       0,    18,     0,     0,     0,     9,    10,    11,    12,    13,
-      32,    31,    26,     8,     0,    21,    22,    23,     3,     4
+      45,     0,     1,    44,    11,    12,    13,    33,     2,     5,
+      28,     0,     0,     0,     0,     0,    14,     0,    38,     0,
+       0,    14,     0,    29,     0,     0,     0,     0,     0,    21,
+      22,     6,    23,    28,     0,    28,    28,     0,     0,     0,
+       0,     0,     0,     0,     0,     0,    46,     7,    25,     0,
+       0,     8,     0,    20,     0,    24,     0,     0,     0,     0,
+       0,    15,    16,    17,    18,    19,     0,     0,    42,    43,
+      41,    40,    35,    14,     0,    30,     9,    10,    31,    32,
+      26,     0,     3,     4,     0,     0,    27
   };
 
   const signed char
   Parser::yypgoto_[] =
   {
-      -9,     0,    -1,    -5,    -9,    -9,    -9,    -9
+     -32,     0,     7,   -32,    -1,   -31,   -32,   -32,   -32,   -32
   };
 
   const signed char
   Parser::yydefgoto_[] =
   {
-       0,    18,    19,    20,    22,    16,    17,     1
+       0,    21,    17,    26,    23,    24,    28,    19,    20,     1
   };
 
   const signed char
   Parser::yytable_[] =
   {
-      15,    14,   -25,   -25,    33,    34,   -27,   -27,    37,    21,
-      23,    24,    25,    58,    41,   -30,   -25,    59,    35,    38,
-     -27,    43,    44,    42,    38,     0,    38,    45,    46,    47,
-      48,    49,    50,    51,    54,    53,    36,    55,     0,    56,
-       0,    57,     2,     3,     0,     4,     5,     6,     7,     8,
-       0,     0,     9,     0,    10,     0,    11,    12,     0,    30,
-      31,    32,     0,    13,     0,   -28,     4,     5,     6,    52,
-       8,     0,     0,     9,     0,    10,     0,    11,    12,     4,
-       5,     6,     0,     8,    13,     0,     9,     0,    10,     0,
-      11,    12,     0,     0,     0,     0,    26,    13,    27,    39,
-      28,    29,    30,    31,    32,    26,     0,    27,    40,    28,
-      29,    30,    31,    32
+      18,    16,    57,   -39,    59,    60,    47,    33,   -34,    33,
+      27,    29,    30,    31,    32,   -34,   -34,    22,    25,    42,
+      33,    39,    40,    41,   -36,    48,    43,    44,    47,    50,
+     -34,   -36,   -36,    58,    50,    49,    61,    62,    63,    64,
+      65,    45,    70,    71,    74,    73,   -36,     9,    75,    68,
+      69,    82,    66,    78,    67,    79,    46,    76,    51,    77,
+       0,    49,    14,     2,     3,     0,    52,     4,     5,     6,
+       7,     8,     9,    84,    85,    55,    80,    10,    83,    11,
+      86,    12,    13,    56,    49,     0,    49,    14,     0,    15,
+     -37,     4,     5,     6,    72,     8,     9,     0,     0,     0,
+       0,    10,     0,    11,     0,    12,    13,     0,     0,     0,
+       0,    14,     0,    15,     4,     5,     6,     0,     8,     9,
+       0,     0,     0,     0,    10,     0,    11,     0,    12,    13,
+       0,     0,     0,     0,    14,     0,    15,    34,    35,     0,
+      36,    53,    37,    38,    39,    40,    41,    81,     0,    54,
+      34,    35,     0,    36,     0,    37,    38,    39,    40,    41,
+      34,    35,     0,    36,     0,    37,    38,    39,    40,    41,
+      34,    35,     0,     0,     0,    37,    38,    39,    40,    41
   };
 
   const signed char
   Parser::yycheck_[] =
   {
-       1,     1,     8,     9,     8,     9,     8,     9,    11,    10,
-      11,    12,    13,    11,    13,    23,    22,    13,    22,    22,
-      22,    26,    27,    22,    22,    -1,    22,    28,    29,    30,
-      31,    32,    33,    34,    35,    35,    23,    38,    -1,    40,
-      -1,    42,     0,     1,    -1,     3,     4,     5,     6,     7,
-      -1,    -1,    10,    -1,    12,    -1,    14,    15,    -1,    16,
-      17,    18,    -1,    21,    -1,    23,     3,     4,     5,     6,
-       7,    -1,    -1,    10,    -1,    12,    -1,    14,    15,     3,
-       4,     5,    -1,     7,    21,    -1,    10,    -1,    12,    -1,
-      14,    15,    -1,    -1,    -1,    -1,    10,    21,    12,    13,
-      14,    15,    16,    17,    18,    10,    -1,    12,    22,    14,
-      15,    16,    17,    18
+       1,     1,    33,    27,    35,    36,    15,    16,     3,    16,
+      11,    12,    13,    14,    15,    10,    11,    10,    11,     3,
+      16,    20,    21,    22,     3,    15,    10,    11,    15,    25,
+      25,    10,    11,    34,    25,    25,    37,    38,    39,    40,
+      41,    25,    43,    44,    45,    45,    25,     9,    49,    42,
+      43,    15,    14,    54,    16,    56,    27,    50,    17,    52,
+      -1,    25,    24,     0,     1,    -1,    25,     4,     5,     6,
+       7,     8,     9,    66,    67,    17,    17,    14,    17,    16,
+      81,    18,    19,    25,    25,    -1,    25,    24,    -1,    26,
+      27,     4,     5,     6,     7,     8,     9,    -1,    -1,    -1,
+      -1,    14,    -1,    16,    -1,    18,    19,    -1,    -1,    -1,
+      -1,    24,    -1,    26,     4,     5,     6,    -1,     8,     9,
+      -1,    -1,    -1,    -1,    14,    -1,    16,    -1,    18,    19,
+      -1,    -1,    -1,    -1,    24,    -1,    26,    13,    14,    -1,
+      16,    17,    18,    19,    20,    21,    22,    10,    -1,    25,
+      13,    14,    -1,    16,    -1,    18,    19,    20,    21,    22,
+      13,    14,    -1,    16,    -1,    18,    19,    20,    21,    22,
+      13,    14,    -1,    -1,    -1,    18,    19,    20,    21,    22
   };
 
   const signed char
   Parser::yystos_[] =
   {
-       0,    31,     0,     1,     3,     4,     5,     6,     7,    10,
-      12,    14,    15,    21,    25,    26,    29,    30,    25,    26,
-      27,    26,    28,    26,    26,    26,    10,    12,    14,    15,
-      16,    17,    18,     8,     9,    22,    23,    11,    22,    13,
-      22,    13,    22,    27,    27,    26,    26,    26,    26,    26,
-      26,    26,     6,    25,    26,    26,    26,    26,    11,    13
+       0,    37,     0,     1,     4,     5,     6,     7,     8,     9,
+      14,    16,    18,    19,    24,    26,    29,    30,    32,    35,
+      36,    29,    30,    32,    33,    30,    31,    32,    34,    32,
+      32,    32,    32,    16,    13,    14,    16,    18,    19,    20,
+      21,    22,     3,    10,    11,    25,    27,    15,    15,    25,
+      25,    17,    25,    17,    25,    17,    25,    33,    32,    33,
+      33,    32,    32,    32,    32,    32,    14,    16,    30,    30,
+      32,    32,     7,    29,    32,    32,    30,    30,    32,    32,
+      17,    10,    15,    17,    30,    30,    32
   };
 
   const signed char
   Parser::yyr1_[] =
   {
-       0,    24,    25,    25,    25,    26,    26,    26,    26,    26,
-      26,    26,    26,    26,    26,    26,    26,    26,    26,    26,
-      27,    27,    28,    28,    29,    29,    29,    29,    30,    30,
-      30,    30,    30,    30,    31,    31
+       0,    28,    29,    29,    29,    30,    30,    30,    30,    31,
+      31,    32,    32,    32,    32,    32,    32,    32,    32,    32,
+      32,    32,    32,    32,    32,    32,    32,    32,    33,    33,
+      33,    34,    34,    35,    35,    35,    35,    36,    36,    36,
+      36,    36,    36,    36,    36,    37,    37
   };
 
   const signed char
   Parser::yyr2_[] =
   {
-       0,     2,     1,     4,     4,     1,     1,     1,     1,     3,
-       3,     3,     3,     3,     3,     2,     2,     2,     3,     3,
-       1,     3,     3,     3,     1,     1,     3,     3,     0,     1,
-       1,     3,     3,     1,     0,     3
+       0,     2,     1,     4,     4,     1,     2,     3,     3,     3,
+       3,     1,     1,     1,     1,     3,     3,     3,     3,     3,
+       3,     2,     2,     2,     3,     3,     4,     5,     0,     1,
+       3,     3,     3,     1,     1,     3,     3,     0,     1,     1,
+       3,     3,     3,     3,     1,     0,     3
   };
 
 
@@ -1389,23 +1542,25 @@ namespace parser {
   const char*
   const Parser::yytname_[] =
   {
-  "\"end of file\"", "error", "\"invalid token\"", "INTEGER", "FRACTION",
-  "STRING", "IDENTIFIER", "VARIABLE", "':'", "'='", "'['", "']'", "'('",
-  "')'", "'+'", "'-'", "'*'", "'/'", "'%'", "UNARY", "'`'", "'~'", "','",
-  "';'", "$accept", "vars", "expr", "arg_list", "expr_list", "var_list",
+  "\"end of file\"", "error", "\"invalid token\"", "FORWARD_DECLARE",
+  "INTEGER", "FRACTION", "STRING", "IDENTIFIER", "VARIABLE", "TYPE", "':'",
+  "'='", "TYPE_PREC", "'?'", "'['", "']'", "'('", "')'", "'+'", "'-'",
+  "'*'", "'/'", "'%'", "UNARY", "'`'", "','", "'~'", "';'", "$accept",
+  "vars", "type", "type_list", "expr", "arg_list", "expr_list", "var_list",
   "stmt", "scope", YY_NULLPTR
   };
 #endif
 
 
 #if YYDEBUG
-  const signed char
+  const unsigned char
   Parser::yyrline_[] =
   {
-       0,    70,    70,    71,    72,    74,    75,    76,    77,    78,
-      79,    80,    81,    82,    83,    84,    85,    86,    87,    88,
-      90,    91,    93,    94,    96,    97,    98,    99,   102,   103,
-     104,   105,   106,   107,   111,   112
+       0,    79,    79,    80,    81,    83,    84,    85,    86,    88,
+      89,    91,    92,    93,    94,    95,    96,    97,    98,    99,
+     100,   101,   102,   103,   104,   105,   106,   107,   109,   110,
+     111,   113,   114,   116,   117,   118,   119,   122,   123,   124,
+     125,   126,   127,   128,   130,   134,   135
   };
 
   void
@@ -1447,16 +1602,16 @@ namespace parser {
        0,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-       2,     2,     2,     2,     2,     2,     2,    18,     2,     2,
-      12,    13,    16,    14,    22,    15,     2,    17,     2,     2,
-       2,     2,     2,     2,     2,     2,     2,     2,     8,    23,
-       2,     9,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,    22,     2,     2,
+      16,    17,    20,    18,    25,    19,     2,    21,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,    10,    27,
+       2,    11,     2,    13,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-       2,    10,     2,    11,     2,     2,    20,     2,     2,     2,
+       2,    14,     2,    15,     2,     2,    24,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-       2,     2,     2,     2,     2,     2,    21,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,    26,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
@@ -1470,10 +1625,10 @@ namespace parser {
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     1,     2,     3,     4,
-       5,     6,     7,    19
+       5,     6,     7,     8,     9,    12,    23
     };
     // Last valid token kind.
-    const int code_max = 263;
+    const int code_max = 266;
 
     if (t <= 0)
       return symbol_kind::S_YYEOF;
@@ -1485,9 +1640,9 @@ namespace parser {
 
 #line 6 "parser.y"
 } // parser
-#line 1489 "parser.cpp"
+#line 1644 "parser.cpp"
 
-#line 115 "parser.y"
+#line 138 "parser.y"
 
 
 namespace parser {
