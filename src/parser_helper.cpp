@@ -1,9 +1,10 @@
 #include "parser_helper.hpp"
 
 #include "ast.hpp"
+#include "call.hpp"
 #include "lexer.hpp"
 #include "loop.hpp"
-#include "operator.hpp"
+#include "call.hpp"
 #include "callable.hpp"
 #include "error.hpp"
 #include "integer.hpp"
@@ -20,35 +21,44 @@ std::shared_ptr<object::Object> exec_binary_op(std::shared_ptr<object::Object> l
                          std::shared_ptr<object::Object> rhs, 
                          const std::string& op,parser::location loc) {
   if (lhs->type == nullptr) throw error::eval_error("No type found",loc);
-  object::Object* obj = lhs->type->members[op].get();
-  if (dynamic_cast<callable::Callable*>(obj) == nullptr) 
+  auto obj = lhs->type->members[op];
+  if (dynamic_cast<typed_func::TypedFunction*>(obj.get()) == nullptr) 
     throw error::eval_error("This operator is not defined for that data type",loc);
   if (dynamic_cast<ast::Ast*>(lhs.get()) || dynamic_cast<ast::Ast*>(rhs.get()))
-    return std::make_shared<ast::Binary_Operator>(op,lhs,rhs,loc);
-  return static_cast<callable::Callable*>(obj)->on_call({lhs,rhs},loc);
+    return std::make_shared<ast::Call>(ast::Call(std::static_pointer_cast<typed_func::TypedFunction>(obj),{lhs,rhs},loc));
+  return static_cast<callable::Callable*>(obj.get())->on_call({lhs,rhs},loc);
 }
 
 std::shared_ptr<object::Object> exec_unary_op(std::shared_ptr<object::Object> rhs, 
                                               const std::string& op,parser::location loc) {
   if (rhs->type == nullptr) throw error::eval_error("No type found",loc);
-  object::Object* obj = rhs->type->members[op].get();
-  if (dynamic_cast<callable::Callable*>(obj) == nullptr) 
+  auto obj = rhs->type->members[op];
+  if (dynamic_cast<typed_func::TypedFunction*>(obj.get()) == nullptr) 
     throw error::eval_error("This operator is not defined for that data type",loc);
   if (dynamic_cast<ast::Ast*>(rhs.get()))
-    return std::make_shared<ast::Unary_Operator>(op,rhs,loc);
-  return static_cast<callable::Callable*>(obj)->on_call({rhs},loc);
+    return std::make_shared<ast::Call>(ast::Call(std::static_pointer_cast<typed_func::TypedFunction>(obj),{rhs},loc));
+  return static_cast<callable::Callable*>(obj.get())->on_call({rhs},loc);
 }
 
 std::shared_ptr<object::Object> exec_call(std::shared_ptr<object::Object> obj, 
                                          std::vector<std::shared_ptr<object::Object>> args, 
                                          std::string method,parser::location loc) {
   if (obj->type == nullptr) throw error::eval_error("No type found",loc);
-  object::Object* obj2 = obj->type->members[method].get();
-  if (dynamic_cast<callable::Callable*>(obj2) == nullptr) 
+  auto obj2 = obj->type->members[method];
+  if (dynamic_cast<typed_func::TypedFunction*>(obj2.get()) == nullptr) 
     throw error::eval_error("This method is not defined for that data type",loc);
   std::vector<std::shared_ptr<object::Object>> args2 = {obj};
   args2.insert(args2.end(),args.begin(),args.end());
-  return static_cast<callable::Callable*>(obj2)->on_call(args2,loc);
+  bool has_ast = false;
+  for (auto& arg : args2) {
+    if (dynamic_cast<ast::Ast*>(arg.get())) {
+      has_ast = true;
+      break;
+    }
+  }
+  if (has_ast)
+    return std::make_shared<ast::Call>(ast::Call(std::static_pointer_cast<typed_func::TypedFunction>(obj2),args2,loc));
+  return static_cast<callable::Callable*>(obj2.get())->on_call(args2,loc);
 }
 
 std::shared_ptr<object::Object> exec_assign_single(std::shared_ptr<object::Object> lhs,
@@ -56,8 +66,8 @@ std::shared_ptr<object::Object> exec_assign_single(std::shared_ptr<object::Objec
                         lexer::Lexer* lexer,
                         parser::location loc) {
     if (lhs->type == nullptr) throw error::eval_error("No type found",loc);
-    object::Object* obj = lhs->type->members["="].get();
-    if (dynamic_cast<callable::Callable*>(obj) == nullptr) 
+    auto op = lhs->type->members["="];
+    if (dynamic_cast<callable::Callable*>(op.get()) == nullptr) 
       throw error::eval_error("This data type is not assignable",loc);
     if (dynamic_cast<ast::Ast*>(lhs.get()) || dynamic_cast<ast::Ast*>(rhs.get())) {
       std::shared_ptr<ast::UnknownVariable> obj;
@@ -65,10 +75,10 @@ std::shared_ptr<object::Object> exec_assign_single(std::shared_ptr<object::Objec
         obj = std::static_pointer_cast<ast::UnknownVariable>(lhs);
       else
         obj = make_shared<ast::UnknownVariable>(std::static_pointer_cast<variable::Variable>(lhs));
-      lexer->current_scope->add_statement(std::make_shared<ast::Assign_Operator>(obj,rhs,loc));
+      lexer->current_scope->add_statement(std::make_shared<ast::Assign_Operator>(std::static_pointer_cast<typed_func::TypedFunction>(op), obj, rhs, loc));
       return nullptr;
     }
-    return static_cast<callable::Callable*>(obj)->on_call({lhs,rhs},loc);
+    return static_cast<callable::Callable*>(op.get())->on_call({lhs,rhs},loc);
 }
 std::shared_ptr<object::Object> exec_assign(std::vector<std::shared_ptr<object::Object>> vars, 
                  std::shared_ptr<object::Object> rhs, 
@@ -147,6 +157,15 @@ std::shared_ptr<object::Object> exec_constructor(std::shared_ptr<object::Object>
     throw error::eval_error("This type has no constructor",loc);
   auto arg = args;
   arg.insert(arg.begin(),type);
+    bool has_ast = false;
+  for (auto& a : arg) {
+    if (dynamic_cast<ast::Ast*>(a.get())) {
+      has_ast = true;
+      break;
+    }
+  }
+  if (has_ast)
+    return std::make_shared<ast::Call>(ast::Call(std::static_pointer_cast<typed_func::TypedFunction>(func_obj),arg,loc));
   return static_cast<callable::Callable*>(func_obj.get())->on_call(arg,loc);
 }
 
@@ -167,10 +186,10 @@ void push_scope_block(lexer::Lexer *lexer) {
   lexer->current_scope = new_scope;
 }
 
-void pop_scope_block(lexer::Lexer *lexer) {
+std::shared_ptr<object::Object> pop_scope_block(lexer::Lexer *lexer) {
   auto current_scope = lexer->current_scope;
   lexer->current_scope = lexer->current_scope->parent;
-  lexer->current_scope->add_statement(current_scope);
+  return current_scope;
 }
 
 void push_scope_loop(lexer::Lexer *lexer, parser::location loc, std::shared_ptr<object::Object> cond) {

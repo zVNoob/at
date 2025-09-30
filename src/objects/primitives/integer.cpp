@@ -24,7 +24,7 @@ std::shared_ptr<Object> on_add(arg_list args) {
 
 std::shared_ptr<Object> on_sub(arg_list args) {
   if (args.size() == 1) return {
-    std::make_shared<Integer>(static_cast<Integer*>(args[0].get())->value)};
+    std::make_shared<Integer>(-static_cast<Integer*>(args[0].get())->value)};
   return std::make_shared<Integer>(
         static_cast<Integer*>(args[0].get())->value - 
         static_cast<Integer*>(args[1].get())->value);
@@ -187,6 +187,7 @@ std::shared_ptr<type::Type> Get_Integer_type() {
   }
   {
     auto func_obj = std::make_shared<TypedFunction>(Get_Integer_type());
+    func_obj->push_func(std::make_shared<InternalFunction>(on_construct),{nullptr});
     func_obj->push_func(std::make_shared<InternalFunction>(on_construct),{nullptr,Get_Integer_type()});
     func_obj->push_func(std::make_shared<InternalFunction>(on_construct),{nullptr,string::Get_String_type()});
     func_obj->push_func(std::make_shared<InternalFunction>(on_construct),{nullptr,fraction::Get_Fraction_type()});

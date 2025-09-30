@@ -1,5 +1,6 @@
 #include "string.hpp"
 #include "callable.hpp"
+#include "object.hpp"
 #include "type.hpp"
 #include "internal_func.hpp"
 #include "typed_func.hpp"
@@ -36,6 +37,13 @@ std::shared_ptr<Object> on_find(arg_list args) {
         ));
 }
 
+std::shared_ptr<Object> on_equal(arg_list args) {
+  auto arg0 = static_cast<String*>(args[0].get())->value;
+  auto arg1 = static_cast<String*>(args[1].get())->value;
+  return std::make_shared<integer::Integer>(
+        BigInt(arg0 == arg1));
+}
+
 class StringContainerVariable : public variable::Variable {
 public:
   std::shared_ptr<String> container;
@@ -66,6 +74,16 @@ std::shared_ptr<Object> on_get(arg_list args) {
   return std::make_shared<StringContainerVariable>(obj, index);
 }
 
+std::shared_ptr<Object> on_construct(arg_list args) {
+  if (args.size() == 1) return std::make_shared<String>("");
+  if (dynamic_cast<String*>(args[1].get())) return args[1];
+  if (dynamic_cast<integer::Integer*>(args[1].get())) 
+    return std::make_shared<String>(
+      std::string(1,static_cast<integer::Integer*>(args[1].get())->value.to_long()));
+  throw error::internal_error("Invalid argument for String constructor");
+  
+}
+
 std::shared_ptr<Object> on_assign(arg_list args) {
   // 1st arg is always variable
   static_cast<variable::Variable*>(args[0].get())->set_value(args[1]);
@@ -94,6 +112,11 @@ std::shared_ptr<type::Type> Get_String_type() {
     type->members["%"] = func_obj;
   }
   {
+    auto func_obj = std::make_shared<TypedFunction>(integer::Get_Integer_type());
+    func_obj->push_func(std::make_shared<InternalFunction>(on_equal),{Get_String_type(),Get_String_type()});
+    type->members["=="] = func_obj;
+  }
+  {
     auto func_obj = std::make_shared<TypedFunction>(Get_String_type());
     func_obj->push_func(std::make_shared<InternalFunction>(on_get),{Get_String_type(),integer::Get_Integer_type()});
     type->members["[]"] = func_obj;
@@ -102,6 +125,13 @@ std::shared_ptr<type::Type> Get_String_type() {
     auto func_obj = std::make_shared<TypedFunction>(Get_String_type());
     func_obj->push_func(std::make_shared<InternalFunction>(on_assign),{Get_String_type(),Get_String_type()});
     type->members["="] = func_obj;
+  }
+  {
+    auto func_obj = std::make_shared<TypedFunction>(Get_String_type());
+    func_obj->push_func(std::make_shared<InternalFunction>(on_construct),{nullptr});
+    func_obj->push_func(std::make_shared<InternalFunction>(on_construct),{nullptr,Get_String_type()});
+    func_obj->push_func(std::make_shared<InternalFunction>(on_construct),{nullptr,integer::Get_Integer_type()});
+    type->members[""] = func_obj;
   }
   return type;
 }

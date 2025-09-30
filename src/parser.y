@@ -92,7 +92,7 @@ type_list: type ',' type { $$ = std::vector<std::shared_ptr<type::Type>>{$1,$3};
 expr: INTEGER { $$ = $1; }
     | FRACTION { $$ = $1; }
     | STRING { $$ = $1; }
-    | vars { $$ = static_pointer_cast<variable::Variable>($1)->get_value(); }
+    | vars { if (dynamic_cast<variable::Variable*>($1.get())) $$ = static_pointer_cast<variable::Variable>($1)->get_value(); else $$ = $1; }
     | UNRESOLVED_VARIABLE { $$ = $1; }
     | expr '+' expr { $$ = exec_binary_op($1,$3,"+",@2); }
     | expr '-' expr { $$ = exec_binary_op($1,$3,"-",@2); }
@@ -137,7 +137,9 @@ stmt: %empty
     | var_list '=' expr { exec_assign($1,$3,lexer,@2); }
     | var_list ':' expr { exec_declare($1,$3,lexer,@2); }
     | var_list ':' type { exec_declare($1,$3,lexer,@2); }
-    | '{' { push_scope_block(lexer); } scope '}' { pop_scope_block(lexer); }
+    | '{' { push_scope_block(lexer); } scope '}' { 
+      on_orphan_value(pop_scope_block(lexer),lexer,err_rp); 
+    }
     | '$' '(' <bool>{ 
       $$ = lexer->current_scope->auto_resolve;
       lexer->current_scope->auto_resolve = false;

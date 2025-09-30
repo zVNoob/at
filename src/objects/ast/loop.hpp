@@ -19,7 +19,8 @@ public:
   std::shared_ptr<object::Object> eval() override {
     while (true) {
       std::shared_ptr<object::Object> cond = condition;
-      if (dynamic_cast<ast::Ast*>(cond.get())) cond = std::static_pointer_cast<ast::Ast>(cond)->eval();
+      if (dynamic_cast<ast::Ast*>(cond.get())) 
+        cond = std::static_pointer_cast<ast::Ast>(cond)->eval();
       if (std::static_pointer_cast<integer::Integer>(cond)->value == BigInt(0))
         break;
       Scope::eval();

@@ -37,7 +37,7 @@
 
 
 // First part of user prologue.
-#line 29 "parser.y"
+#line 29 "src/parser.y"
 
 #include "lexer.hpp"
 #include "error.hpp"
@@ -52,7 +52,7 @@
 #include <iostream>
 #include <memory>
 
-#line 56 "parser.cpp"
+#line 56 "src/parser.cpp"
 
 
 #include "parser.hpp"
@@ -148,9 +148,9 @@
 #define YYERROR         goto yyerrorlab
 #define YYRECOVERING()  (!!yyerrstatus_)
 
-#line 6 "parser.y"
+#line 6 "src/parser.y"
 namespace parser {
-#line 154 "parser.cpp"
+#line 154 "src/parser.cpp"
 
   /// Build a parser object.
   Parser::Parser (lexer::Lexer* lexer_yyarg, error::ErrorReporter* err_rp_yyarg)
@@ -848,351 +848,353 @@ namespace parser {
           switch (yyn)
             {
   case 2: // vars: VARIABLE
-#line 81 "parser.y"
+#line 81 "src/parser.y"
                { yylhs.value.as < std::shared_ptr<object::Object> > () = yystack_[0].value.as < std::shared_ptr<object::Object> > (); }
-#line 854 "parser.cpp"
+#line 854 "src/parser.cpp"
     break;
 
   case 3: // vars: expr '[' arg_list ']'
-#line 82 "parser.y"
+#line 82 "src/parser.y"
                             { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_call(yystack_[3].value.as < std::shared_ptr<object::Object> > (),yystack_[1].value.as < std::vector<std::shared_ptr<object::Object>> > (),"[]",yystack_[2].location); }
-#line 860 "parser.cpp"
+#line 860 "src/parser.cpp"
     break;
 
   case 4: // type: TYPE
-#line 84 "parser.y"
+#line 84 "src/parser.y"
            { yylhs.value.as < std::shared_ptr<type::Type> > () = std::static_pointer_cast<type::Type>(yystack_[0].value.as < std::shared_ptr<object::Object> > ()); }
-#line 866 "parser.cpp"
+#line 866 "src/parser.cpp"
     break;
 
   case 5: // type: '`' expr
-#line 85 "parser.y"
+#line 85 "src/parser.y"
                { yylhs.value.as < std::shared_ptr<type::Type> > () = yystack_[0].value.as < std::shared_ptr<object::Object> > ()->type; }
-#line 872 "parser.cpp"
+#line 872 "src/parser.cpp"
     break;
 
   case 6: // type: '[' type ']'
-#line 86 "parser.y"
+#line 86 "src/parser.y"
                    { yylhs.value.as < std::shared_ptr<type::Type> > () = array::get_Array_type(yystack_[1].value.as < std::shared_ptr<type::Type> > ()); }
-#line 878 "parser.cpp"
+#line 878 "src/parser.cpp"
     break;
 
   case 7: // type: '(' type_list ')'
-#line 87 "parser.y"
+#line 87 "src/parser.y"
                         { yylhs.value.as < std::shared_ptr<type::Type> > () = tuple::get_Tuple_type(yystack_[1].value.as < std::vector<std::shared_ptr<type::Type>> > ()); }
-#line 884 "parser.cpp"
+#line 884 "src/parser.cpp"
     break;
 
   case 8: // type_list: type ',' type
-#line 89 "parser.y"
+#line 89 "src/parser.y"
                          { yylhs.value.as < std::vector<std::shared_ptr<type::Type>> > () = std::vector<std::shared_ptr<type::Type>>{yystack_[2].value.as < std::shared_ptr<type::Type> > (),yystack_[0].value.as < std::shared_ptr<type::Type> > ()}; }
-#line 890 "parser.cpp"
+#line 890 "src/parser.cpp"
     break;
 
   case 9: // type_list: type_list ',' type
-#line 90 "parser.y"
+#line 90 "src/parser.y"
                               { yylhs.value.as < std::vector<std::shared_ptr<type::Type>> > () = std::move(yystack_[2].value.as < std::vector<std::shared_ptr<type::Type>> > ()); yylhs.value.as < std::vector<std::shared_ptr<type::Type>> > ().push_back(yystack_[0].value.as < std::shared_ptr<type::Type> > ()); }
-#line 896 "parser.cpp"
+#line 896 "src/parser.cpp"
     break;
 
   case 10: // expr: INTEGER
-#line 92 "parser.y"
+#line 92 "src/parser.y"
               { yylhs.value.as < std::shared_ptr<object::Object> > () = yystack_[0].value.as < std::shared_ptr<object::Object> > (); }
-#line 902 "parser.cpp"
+#line 902 "src/parser.cpp"
     break;
 
   case 11: // expr: FRACTION
-#line 93 "parser.y"
+#line 93 "src/parser.y"
                { yylhs.value.as < std::shared_ptr<object::Object> > () = yystack_[0].value.as < std::shared_ptr<object::Object> > (); }
-#line 908 "parser.cpp"
+#line 908 "src/parser.cpp"
     break;
 
   case 12: // expr: STRING
-#line 94 "parser.y"
+#line 94 "src/parser.y"
              { yylhs.value.as < std::shared_ptr<object::Object> > () = yystack_[0].value.as < std::shared_ptr<object::Object> > (); }
-#line 914 "parser.cpp"
+#line 914 "src/parser.cpp"
     break;
 
   case 13: // expr: vars
-#line 95 "parser.y"
-           { yylhs.value.as < std::shared_ptr<object::Object> > () = static_pointer_cast<variable::Variable>(yystack_[0].value.as < std::shared_ptr<object::Object> > ())->get_value(); }
-#line 920 "parser.cpp"
+#line 95 "src/parser.y"
+           { if (dynamic_cast<variable::Variable*>(yystack_[0].value.as < std::shared_ptr<object::Object> > ().get())) yylhs.value.as < std::shared_ptr<object::Object> > () = static_pointer_cast<variable::Variable>(yystack_[0].value.as < std::shared_ptr<object::Object> > ())->get_value(); else yylhs.value.as < std::shared_ptr<object::Object> > () = yystack_[0].value.as < std::shared_ptr<object::Object> > (); }
+#line 920 "src/parser.cpp"
     break;
 
   case 14: // expr: UNRESOLVED_VARIABLE
-#line 96 "parser.y"
+#line 96 "src/parser.y"
                           { yylhs.value.as < std::shared_ptr<object::Object> > () = yystack_[0].value.as < std::shared_ptr<object::Object> > (); }
-#line 926 "parser.cpp"
+#line 926 "src/parser.cpp"
     break;
 
   case 15: // expr: expr '+' expr
-#line 97 "parser.y"
+#line 97 "src/parser.y"
                     { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_binary_op(yystack_[2].value.as < std::shared_ptr<object::Object> > (),yystack_[0].value.as < std::shared_ptr<object::Object> > (),"+",yystack_[1].location); }
-#line 932 "parser.cpp"
+#line 932 "src/parser.cpp"
     break;
 
   case 16: // expr: expr '-' expr
-#line 98 "parser.y"
+#line 98 "src/parser.y"
                     { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_binary_op(yystack_[2].value.as < std::shared_ptr<object::Object> > (),yystack_[0].value.as < std::shared_ptr<object::Object> > (),"-",yystack_[1].location); }
-#line 938 "parser.cpp"
+#line 938 "src/parser.cpp"
     break;
 
   case 17: // expr: expr '*' expr
-#line 99 "parser.y"
+#line 99 "src/parser.y"
                     { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_binary_op(yystack_[2].value.as < std::shared_ptr<object::Object> > (),yystack_[0].value.as < std::shared_ptr<object::Object> > (),"*",yystack_[1].location); }
-#line 944 "parser.cpp"
+#line 944 "src/parser.cpp"
     break;
 
   case 18: // expr: expr '/' expr
-#line 100 "parser.y"
+#line 100 "src/parser.y"
                     { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_binary_op(yystack_[2].value.as < std::shared_ptr<object::Object> > (),yystack_[0].value.as < std::shared_ptr<object::Object> > (),"/",yystack_[1].location); }
-#line 950 "parser.cpp"
+#line 950 "src/parser.cpp"
     break;
 
   case 19: // expr: expr '%' expr
-#line 101 "parser.y"
+#line 101 "src/parser.y"
                     { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_binary_op(yystack_[2].value.as < std::shared_ptr<object::Object> > (),yystack_[0].value.as < std::shared_ptr<object::Object> > (),"%",yystack_[1].location); }
-#line 956 "parser.cpp"
+#line 956 "src/parser.cpp"
     break;
 
   case 20: // expr: expr '<' expr
-#line 102 "parser.y"
+#line 102 "src/parser.y"
                     { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_binary_op(yystack_[2].value.as < std::shared_ptr<object::Object> > (),yystack_[0].value.as < std::shared_ptr<object::Object> > (),"<",yystack_[1].location); }
-#line 962 "parser.cpp"
+#line 962 "src/parser.cpp"
     break;
 
   case 21: // expr: expr '>' expr
-#line 103 "parser.y"
+#line 103 "src/parser.y"
                     { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_binary_op(yystack_[2].value.as < std::shared_ptr<object::Object> > (),yystack_[0].value.as < std::shared_ptr<object::Object> > (),">",yystack_[1].location); }
-#line 968 "parser.cpp"
+#line 968 "src/parser.cpp"
     break;
 
   case 22: // expr: expr EQUAL expr
-#line 104 "parser.y"
+#line 104 "src/parser.y"
                       { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_binary_op(yystack_[2].value.as < std::shared_ptr<object::Object> > (),yystack_[0].value.as < std::shared_ptr<object::Object> > (),"==",yystack_[1].location); }
-#line 974 "parser.cpp"
+#line 974 "src/parser.cpp"
     break;
 
   case 23: // expr: expr '|' expr
-#line 105 "parser.y"
+#line 105 "src/parser.y"
                     { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_binary_op(yystack_[2].value.as < std::shared_ptr<object::Object> > (),yystack_[0].value.as < std::shared_ptr<object::Object> > (),"|",yystack_[1].location); }
-#line 980 "parser.cpp"
+#line 980 "src/parser.cpp"
     break;
 
   case 24: // expr: expr '&' expr
-#line 106 "parser.y"
+#line 106 "src/parser.y"
                     { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_binary_op(yystack_[2].value.as < std::shared_ptr<object::Object> > (),yystack_[0].value.as < std::shared_ptr<object::Object> > (),"&",yystack_[1].location); }
-#line 986 "parser.cpp"
+#line 986 "src/parser.cpp"
     break;
 
   case 25: // expr: expr '^' expr
-#line 107 "parser.y"
+#line 107 "src/parser.y"
                     { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_binary_op(yystack_[2].value.as < std::shared_ptr<object::Object> > (),yystack_[0].value.as < std::shared_ptr<object::Object> > (),"^",yystack_[1].location); }
-#line 992 "parser.cpp"
+#line 992 "src/parser.cpp"
     break;
 
   case 26: // expr: '(' expr ')'
-#line 108 "parser.y"
+#line 108 "src/parser.y"
                    { yylhs.value.as < std::shared_ptr<object::Object> > () = yystack_[1].value.as < std::shared_ptr<object::Object> > (); }
-#line 998 "parser.cpp"
+#line 998 "src/parser.cpp"
     break;
 
   case 27: // expr: '+' expr
-#line 109 "parser.y"
+#line 109 "src/parser.y"
                            { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_unary_op(yystack_[0].value.as < std::shared_ptr<object::Object> > (),"+",yystack_[1].location); }
-#line 1004 "parser.cpp"
+#line 1004 "src/parser.cpp"
     break;
 
   case 28: // expr: '-' expr
-#line 110 "parser.y"
+#line 110 "src/parser.y"
                            { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_unary_op(yystack_[0].value.as < std::shared_ptr<object::Object> > (),"-",yystack_[1].location); }
-#line 1010 "parser.cpp"
+#line 1010 "src/parser.cpp"
     break;
 
   case 29: // expr: '~' expr
-#line 111 "parser.y"
+#line 111 "src/parser.y"
                            { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_unary_op(yystack_[0].value.as < std::shared_ptr<object::Object> > (),"~",yystack_[1].location); }
-#line 1016 "parser.cpp"
+#line 1016 "src/parser.cpp"
     break;
 
   case 30: // expr: '!' expr
-#line 112 "parser.y"
+#line 112 "src/parser.y"
                            { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_unary_op(yystack_[0].value.as < std::shared_ptr<object::Object> > (),"!",yystack_[1].location); }
-#line 1022 "parser.cpp"
+#line 1022 "src/parser.cpp"
     break;
 
   case 31: // expr: '(' expr_list ')'
-#line 113 "parser.y"
+#line 113 "src/parser.y"
                         { yylhs.value.as < std::shared_ptr<object::Object> > () = make_shared<tuple::Tuple>(yystack_[1].value.as < std::vector<std::shared_ptr<object::Object>> > ()); }
-#line 1028 "parser.cpp"
+#line 1028 "src/parser.cpp"
     break;
 
   case 32: // expr: '[' arg_list ']'
-#line 114 "parser.y"
+#line 114 "src/parser.y"
                        { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_build_array(yystack_[1].value.as < std::vector<std::shared_ptr<object::Object>> > (),yystack_[1].location); }
-#line 1034 "parser.cpp"
+#line 1034 "src/parser.cpp"
     break;
 
   case 33: // expr: type '(' arg_list ')'
-#line 115 "parser.y"
+#line 115 "src/parser.y"
                             { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_constructor(yystack_[3].value.as < std::shared_ptr<type::Type> > (),yystack_[1].value.as < std::vector<std::shared_ptr<object::Object>> > (),yystack_[2].location); }
-#line 1040 "parser.cpp"
+#line 1040 "src/parser.cpp"
     break;
 
   case 34: // expr: expr '(' arg_list ')'
-#line 116 "parser.y"
+#line 116 "src/parser.y"
                             { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_call(yystack_[3].value.as < std::shared_ptr<object::Object> > (),yystack_[1].value.as < std::vector<std::shared_ptr<object::Object>> > (),"()",yystack_[2].location); }
-#line 1046 "parser.cpp"
+#line 1046 "src/parser.cpp"
     break;
 
   case 35: // expr: expr '?' expr ':' expr
-#line 117 "parser.y"
+#line 117 "src/parser.y"
                              { yylhs.value.as < std::shared_ptr<object::Object> > () = exec_conditional(yystack_[4].value.as < std::shared_ptr<object::Object> > (),yystack_[2].value.as < std::shared_ptr<object::Object> > (),yystack_[0].value.as < std::shared_ptr<object::Object> > (),yystack_[3].location); }
-#line 1052 "parser.cpp"
+#line 1052 "src/parser.cpp"
     break;
 
   case 36: // arg_list: %empty
-#line 119 "parser.y"
+#line 119 "src/parser.y"
                  { yylhs.value.as < std::vector<std::shared_ptr<object::Object>> > () = std::vector<std::shared_ptr<object::Object>>{}; }
-#line 1058 "parser.cpp"
+#line 1058 "src/parser.cpp"
     break;
 
   case 37: // arg_list: expr
-#line 120 "parser.y"
+#line 120 "src/parser.y"
                { yylhs.value.as < std::vector<std::shared_ptr<object::Object>> > () = std::vector<std::shared_ptr<object::Object>>{yystack_[0].value.as < std::shared_ptr<object::Object> > ()}; }
-#line 1064 "parser.cpp"
+#line 1064 "src/parser.cpp"
     break;
 
   case 38: // arg_list: arg_list ',' expr
-#line 121 "parser.y"
+#line 121 "src/parser.y"
                             { yylhs.value.as < std::vector<std::shared_ptr<object::Object>> > () = std::move(yystack_[2].value.as < std::vector<std::shared_ptr<object::Object>> > ()); yylhs.value.as < std::vector<std::shared_ptr<object::Object>> > ().push_back(yystack_[0].value.as < std::shared_ptr<object::Object> > ()); }
-#line 1070 "parser.cpp"
+#line 1070 "src/parser.cpp"
     break;
 
   case 39: // expr_list: expr ',' expr
-#line 123 "parser.y"
+#line 123 "src/parser.y"
                          { yylhs.value.as < std::vector<std::shared_ptr<object::Object>> > () = std::vector<std::shared_ptr<object::Object>>{yystack_[2].value.as < std::shared_ptr<object::Object> > (),yystack_[0].value.as < std::shared_ptr<object::Object> > ()}; }
-#line 1076 "parser.cpp"
+#line 1076 "src/parser.cpp"
     break;
 
   case 40: // expr_list: expr_list ',' expr
-#line 124 "parser.y"
+#line 124 "src/parser.y"
                               { yylhs.value.as < std::vector<std::shared_ptr<object::Object>> > () = std::move(yystack_[2].value.as < std::vector<std::shared_ptr<object::Object>> > ()); yylhs.value.as < std::vector<std::shared_ptr<object::Object>> > ().push_back(yystack_[0].value.as < std::shared_ptr<object::Object> > ()); }
-#line 1082 "parser.cpp"
+#line 1082 "src/parser.cpp"
     break;
 
   case 41: // var_list: IDENTIFIER
-#line 126 "parser.y"
+#line 126 "src/parser.y"
                      { yylhs.value.as < std::vector<std::shared_ptr<object::Object>> > () = std::vector<std::shared_ptr<object::Object>>{yystack_[0].value.as < std::shared_ptr<object::Object> > ()}; }
-#line 1088 "parser.cpp"
+#line 1088 "src/parser.cpp"
     break;
 
   case 42: // var_list: vars
-#line 127 "parser.y"
+#line 127 "src/parser.y"
                { yylhs.value.as < std::vector<std::shared_ptr<object::Object>> > () = std::vector<std::shared_ptr<object::Object>>{yystack_[0].value.as < std::shared_ptr<object::Object> > ()}; }
-#line 1094 "parser.cpp"
+#line 1094 "src/parser.cpp"
     break;
 
   case 43: // var_list: UNRESOLVED_VARIABLE
-#line 128 "parser.y"
+#line 128 "src/parser.y"
                               { yylhs.value.as < std::vector<std::shared_ptr<object::Object>> > () = std::vector<std::shared_ptr<object::Object>>{yystack_[0].value.as < std::shared_ptr<object::Object> > ()}; }
-#line 1100 "parser.cpp"
+#line 1100 "src/parser.cpp"
     break;
 
   case 44: // var_list: var_list ',' IDENTIFIER
-#line 129 "parser.y"
+#line 129 "src/parser.y"
                                   { yylhs.value.as < std::vector<std::shared_ptr<object::Object>> > () = std::move(yystack_[2].value.as < std::vector<std::shared_ptr<object::Object>> > ()); yylhs.value.as < std::vector<std::shared_ptr<object::Object>> > ().push_back(yystack_[0].value.as < std::shared_ptr<object::Object> > ()); }
-#line 1106 "parser.cpp"
+#line 1106 "src/parser.cpp"
     break;
 
   case 45: // var_list: var_list ',' vars
-#line 130 "parser.y"
+#line 130 "src/parser.y"
                             { yylhs.value.as < std::vector<std::shared_ptr<object::Object>> > () = std::move(yystack_[2].value.as < std::vector<std::shared_ptr<object::Object>> > ()); yylhs.value.as < std::vector<std::shared_ptr<object::Object>> > ().push_back(yystack_[0].value.as < std::shared_ptr<object::Object> > ()); }
-#line 1112 "parser.cpp"
+#line 1112 "src/parser.cpp"
     break;
 
   case 46: // var_list: var_list ',' UNRESOLVED_VARIABLE
-#line 131 "parser.y"
+#line 131 "src/parser.y"
                                            { yylhs.value.as < std::vector<std::shared_ptr<object::Object>> > () = std::move(yystack_[2].value.as < std::vector<std::shared_ptr<object::Object>> > ()); yylhs.value.as < std::vector<std::shared_ptr<object::Object>> > ().push_back(yystack_[0].value.as < std::shared_ptr<object::Object> > ()); }
-#line 1118 "parser.cpp"
+#line 1118 "src/parser.cpp"
     break;
 
   case 48: // stmt: expr
-#line 135 "parser.y"
+#line 135 "src/parser.y"
            { on_orphan_value(yystack_[0].value.as < std::shared_ptr<object::Object> > (),lexer,err_rp); }
-#line 1124 "parser.cpp"
+#line 1124 "src/parser.cpp"
     break;
 
   case 49: // stmt: IDENTIFIER
-#line 136 "parser.y"
+#line 136 "src/parser.y"
                  { throw error::eval_error("Undefined variable: " + static_pointer_cast<variable::Variable>(yystack_[0].value.as < std::shared_ptr<object::Object> > ())->name, yystack_[0].location); }
-#line 1130 "parser.cpp"
+#line 1130 "src/parser.cpp"
     break;
 
   case 50: // stmt: var_list '=' expr
-#line 137 "parser.y"
+#line 137 "src/parser.y"
                         { exec_assign(yystack_[2].value.as < std::vector<std::shared_ptr<object::Object>> > (),yystack_[0].value.as < std::shared_ptr<object::Object> > (),lexer,yystack_[1].location); }
-#line 1136 "parser.cpp"
+#line 1136 "src/parser.cpp"
     break;
 
   case 51: // stmt: var_list ':' expr
-#line 138 "parser.y"
+#line 138 "src/parser.y"
                         { exec_declare(yystack_[2].value.as < std::vector<std::shared_ptr<object::Object>> > (),yystack_[0].value.as < std::shared_ptr<object::Object> > (),lexer,yystack_[1].location); }
-#line 1142 "parser.cpp"
+#line 1142 "src/parser.cpp"
     break;
 
   case 52: // stmt: var_list ':' type
-#line 139 "parser.y"
+#line 139 "src/parser.y"
                         { exec_declare(yystack_[2].value.as < std::vector<std::shared_ptr<object::Object>> > (),yystack_[0].value.as < std::shared_ptr<type::Type> > (),lexer,yystack_[1].location); }
-#line 1148 "parser.cpp"
+#line 1148 "src/parser.cpp"
     break;
 
   case 53: // $@1: %empty
-#line 140 "parser.y"
+#line 140 "src/parser.y"
           { push_scope_block(lexer); }
-#line 1154 "parser.cpp"
+#line 1154 "src/parser.cpp"
     break;
 
   case 54: // stmt: '{' $@1 scope '}'
-#line 140 "parser.y"
-                                                 { pop_scope_block(lexer); }
-#line 1160 "parser.cpp"
+#line 140 "src/parser.y"
+                                                 { 
+      on_orphan_value(pop_scope_block(lexer),lexer,err_rp); 
+    }
+#line 1162 "src/parser.cpp"
     break;
 
   case 55: // @2: %empty
-#line 141 "parser.y"
+#line 143 "src/parser.y"
                     { 
       yylhs.value.as < bool > () = lexer->current_scope->auto_resolve;
       lexer->current_scope->auto_resolve = false;
       }
-#line 1169 "parser.cpp"
+#line 1171 "src/parser.cpp"
     break;
 
   case 56: // $@3: %empty
-#line 144 "parser.y"
+#line 146 "src/parser.y"
                      {
         lexer->current_scope->auto_resolve = yystack_[3].value.as < bool > ();
         push_scope_loop(lexer, yystack_[5].location, yystack_[2].value.as < std::shared_ptr<object::Object> > ());
       }
-#line 1178 "parser.cpp"
+#line 1180 "src/parser.cpp"
     break;
 
   case 57: // stmt: '$' '(' @2 expr ')' '{' $@3 scope '}'
-#line 147 "parser.y"
+#line 149 "src/parser.y"
                   {
         on_orphan_value(pop_scope_loop(lexer),lexer,err_rp);
       }
-#line 1186 "parser.cpp"
+#line 1188 "src/parser.cpp"
     break;
 
   case 61: // start: scope
-#line 158 "parser.y"
+#line 160 "src/parser.y"
              { lexer->current_scope->eval(); }
-#line 1192 "parser.cpp"
+#line 1194 "src/parser.cpp"
     break;
 
 
-#line 1196 "parser.cpp"
+#line 1198 "src/parser.cpp"
 
             default:
               break;
@@ -1744,8 +1746,8 @@ namespace parser {
      102,   103,   104,   105,   106,   107,   108,   109,   110,   111,
      112,   113,   114,   115,   116,   117,   119,   120,   121,   123,
      124,   126,   127,   128,   129,   130,   131,   134,   135,   136,
-     137,   138,   139,   140,   140,   141,   144,   141,   150,   154,
-     155,   158
+     137,   138,   139,   140,   140,   143,   146,   143,   152,   156,
+     157,   160
   };
 
   void
@@ -1823,11 +1825,11 @@ namespace parser {
       return symbol_kind::S_YYUNDEF;
   }
 
-#line 6 "parser.y"
+#line 6 "src/parser.y"
 } // parser
-#line 1829 "parser.cpp"
+#line 1831 "src/parser.cpp"
 
-#line 160 "parser.y"
+#line 162 "src/parser.y"
 
 
 namespace parser {

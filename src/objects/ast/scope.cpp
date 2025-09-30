@@ -1,14 +1,16 @@
 #include "scope.hpp"
 #include "variable.hpp"
-#include "operator.hpp"
+#include "call.hpp"
 #include <memory>
 
 namespace scope {
 void Scope::add_member(std::string name, std::shared_ptr<object::Object> value, bool readonly) {
   members[name].push_front({value, readonly});
   if (auto_resolve == false) {
+    if (value->type->members["="] == nullptr) return;
     add_statement(
       std::make_shared<ast::Assign_Operator>(
+        std::static_pointer_cast<typed_func::TypedFunction>(value->type->members["="]),
         std::make_shared<ast::UnknownVariable>(
           std::make_shared<variable::Variable>(get_variable(name).first)), 
         value, 

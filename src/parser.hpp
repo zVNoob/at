@@ -32,7 +32,7 @@
 
 
 /**
- ** \file parser.hpp
+ ** \file src/parser.hpp
  ** Define the parser::parser class.
  */
 
@@ -42,10 +42,10 @@
 // especially those whose name start with YY_ or yy_.  They are
 // private implementation details that can be changed or removed.
 
-#ifndef YY_YY_PARSER_HPP_INCLUDED
-# define YY_YY_PARSER_HPP_INCLUDED
+#ifndef YY_YY_SRC_PARSER_HPP_INCLUDED
+# define YY_YY_SRC_PARSER_HPP_INCLUDED
 // "%code requires" blocks.
-#line 19 "parser.y"
+#line 19 "src/parser.y"
 
 #include <memory>
 #include <vector>
@@ -55,7 +55,7 @@ namespace error {class ErrorReporter;}
 namespace object {class Object;}
 namespace type {class Type;}
 
-#line 59 "parser.hpp"
+#line 59 "src/parser.hpp"
 
 # include <cassert>
 # include <cstdlib> // std::abort
@@ -194,9 +194,9 @@ namespace type {class Type;}
 # define YYDEBUG 1
 #endif
 
-#line 6 "parser.y"
+#line 6 "src/parser.y"
 namespace parser {
-#line 200 "parser.hpp"
+#line 200 "src/parser.hpp"
 
 
 
@@ -1509,11 +1509,11 @@ switch (yykind)
   };
 
 
-#line 6 "parser.y"
+#line 6 "src/parser.y"
 } // parser
-#line 1515 "parser.hpp"
+#line 1515 "src/parser.hpp"
 
 
 
 
-#endif // !YY_YY_PARSER_HPP_INCLUDED
+#endif // !YY_YY_SRC_PARSER_HPP_INCLUDED

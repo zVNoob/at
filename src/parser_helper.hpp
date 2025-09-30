@@ -43,7 +43,7 @@ std::shared_ptr<object::Object> exec_conditional(std::shared_ptr<object::Object>
 void on_orphan_value(std::shared_ptr<object::Object> value, lexer::Lexer* lexer, error::ErrorReporter* err_rp);
 
 void push_scope_block(lexer::Lexer* lexer);
-void pop_scope_block(lexer::Lexer* lexer);
+std::shared_ptr<object::Object> pop_scope_block(lexer::Lexer* lexer);
 
 void push_scope_loop(lexer::Lexer* lexer, parser::location loc, std::shared_ptr<object::Object> cond);
 std::shared_ptr<object::Object> pop_scope_loop(lexer::Lexer* lexer);
