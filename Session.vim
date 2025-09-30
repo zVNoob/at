@@ -16,7 +16,7 @@ endif
 badd +13 main.cpp
 badd +1 lexer.hpp
 badd +102 lexer.cpp
-badd +100 parser.y
+badd +1 parser.y
 badd +1 error.hpp
 badd +29 error.cpp
 badd +5 objects/object.hpp
@@ -38,15 +38,14 @@ badd +1 objects/variable.hpp
 badd +34 Makefile
 badd +21 objects/scope.hpp
 badd +16 objects/scope.cpp
-badd +12 objects/container/array.hpp
+badd +1 objects/container/array.hpp
 badd +22 objects/container/array.cpp
 badd +1 objects/container
-badd +45 objects/container/tuple.cpp
+badd +21 objects/container/tuple.cpp
 argglobal
 %argdel
 $argadd main.cpp
 set stal=2
-tabnew +setlocal\ bufhidden=wipe
 tabnew +setlocal\ bufhidden=wipe
 tabnew +setlocal\ bufhidden=wipe
 tabnew +setlocal\ bufhidden=wipe
@@ -65,7 +64,7 @@ setlocal foldnestmax=20
 setlocal foldenable
 silent! normal! zE
 let &fdl = &fdl
-let s:l = 8 - ((7 * winheight(0) + 29) / 58)
+let s:l = 8 - ((7 * winheight(0) + 28) / 57)
 if s:l < 1 | let s:l = 1 | endif
 keepjumps exe s:l
 normal! zt
@@ -89,7 +88,9 @@ set winminheight=0
 set winheight=1
 set winminwidth=0
 set winwidth=1
+exe '1resize ' . ((&lines * 57 + 30) / 60)
 exe 'vert 1resize ' . ((&columns * 118 + 118) / 237)
+exe '2resize ' . ((&lines * 57 + 30) / 60)
 exe 'vert 2resize ' . ((&columns * 118 + 118) / 237)
 argglobal
 balt lexer.cpp
@@ -103,7 +104,7 @@ setlocal foldnestmax=20
 setlocal foldenable
 silent! normal! zE
 let &fdl = &fdl
-let s:l = 1 - ((0 * winheight(0) + 29) / 58)
+let s:l = 1 - ((0 * winheight(0) + 28) / 57)
 if s:l < 1 | let s:l = 1 | endif
 keepjumps exe s:l
 normal! zt
@@ -126,14 +127,16 @@ setlocal foldnestmax=20
 setlocal foldenable
 silent! normal! zE
 let &fdl = &fdl
-let s:l = 102 - ((0 * winheight(0) + 29) / 58)
+let s:l = 102 - ((0 * winheight(0) + 28) / 57)
 if s:l < 1 | let s:l = 1 | endif
 keepjumps exe s:l
 normal! zt
 keepjumps 102
 normal! 053|
 wincmd w
+exe '1resize ' . ((&lines * 57 + 30) / 60)
 exe 'vert 1resize ' . ((&columns * 118 + 118) / 237)
+exe '2resize ' . ((&lines * 57 + 30) / 60)
 exe 'vert 2resize ' . ((&columns * 118 + 118) / 237)
 tabnext
 edit parser.y
@@ -157,8 +160,9 @@ set winminheight=0
 set winheight=1
 set winminwidth=0
 set winwidth=1
+exe '1resize ' . ((&lines * 57 + 30) / 60)
 exe 'vert 1resize ' . ((&columns * 118 + 118) / 237)
-exe '2resize ' . ((&lines * 28 + 30) / 60)
+exe '2resize ' . ((&lines * 27 + 30) / 60)
 exe 'vert 2resize ' . ((&columns * 118 + 118) / 237)
 exe '3resize ' . ((&lines * 29 + 30) / 60)
 exe 'vert 3resize ' . ((&columns * 118 + 118) / 237)
@@ -174,12 +178,12 @@ setlocal foldnestmax=20
 setlocal foldenable
 silent! normal! zE
 let &fdl = &fdl
-let s:l = 64 - ((10 * winheight(0) + 29) / 58)
+let s:l = 64 - ((10 * winheight(0) + 28) / 57)
 if s:l < 1 | let s:l = 1 | endif
 keepjumps exe s:l
 normal! zt
 keepjumps 64
-normal! 013|
+normal! 0
 wincmd w
 argglobal
 if bufexists(fnamemodify("parser_helper.hpp", ":p")) | buffer parser_helper.hpp | else | edit parser_helper.hpp | endif
@@ -197,7 +201,7 @@ setlocal foldnestmax=20
 setlocal foldenable
 silent! normal! zE
 let &fdl = &fdl
-let s:l = 22 - ((20 * winheight(0) + 14) / 28)
+let s:l = 22 - ((10 * winheight(0) + 13) / 27)
 if s:l < 1 | let s:l = 1 | endif
 keepjumps exe s:l
 normal! zt
@@ -220,15 +224,16 @@ setlocal foldnestmax=20
 setlocal foldenable
 silent! normal! zE
 let &fdl = &fdl
-let s:l = 22 - ((18 * winheight(0) + 14) / 29)
+let s:l = 22 - ((10 * winheight(0) + 14) / 29)
 if s:l < 1 | let s:l = 1 | endif
 keepjumps exe s:l
 normal! zt
 keepjumps 22
 normal! 016|
 wincmd w
+exe '1resize ' . ((&lines * 57 + 30) / 60)
 exe 'vert 1resize ' . ((&columns * 118 + 118) / 237)
-exe '2resize ' . ((&lines * 28 + 30) / 60)
+exe '2resize ' . ((&lines * 27 + 30) / 60)
 exe 'vert 2resize ' . ((&columns * 118 + 118) / 237)
 exe '3resize ' . ((&lines * 29 + 30) / 60)
 exe 'vert 3resize ' . ((&columns * 118 + 118) / 237)
@@ -250,7 +255,9 @@ set winminheight=0
 set winheight=1
 set winminwidth=0
 set winwidth=1
+exe '1resize ' . ((&lines * 57 + 30) / 60)
 exe 'vert 1resize ' . ((&columns * 118 + 118) / 237)
+exe '2resize ' . ((&lines * 57 + 30) / 60)
 exe 'vert 2resize ' . ((&columns * 118 + 118) / 237)
 argglobal
 balt error.cpp
@@ -264,7 +271,7 @@ setlocal foldnestmax=20
 setlocal foldenable
 silent! normal! zE
 let &fdl = &fdl
-let s:l = 30 - ((29 * winheight(0) + 29) / 58)
+let s:l = 30 - ((29 * winheight(0) + 28) / 57)
 if s:l < 1 | let s:l = 1 | endif
 keepjumps exe s:l
 normal! zt
@@ -287,14 +294,16 @@ setlocal foldnestmax=20
 setlocal foldenable
 silent! normal! zE
 let &fdl = &fdl
-let s:l = 29 - ((28 * winheight(0) + 29) / 58)
+let s:l = 29 - ((28 * winheight(0) + 28) / 57)
 if s:l < 1 | let s:l = 1 | endif
 keepjumps exe s:l
 normal! zt
 keepjumps 29
 normal! 030|
 wincmd w
+exe '1resize ' . ((&lines * 57 + 30) / 60)
 exe 'vert 1resize ' . ((&columns * 118 + 118) / 237)
+exe '2resize ' . ((&lines * 57 + 30) / 60)
 exe 'vert 2resize ' . ((&columns * 118 + 118) / 237)
 tabnext
 edit objects/variable.hpp
@@ -309,7 +318,7 @@ setlocal foldnestmax=20
 setlocal foldenable
 silent! normal! zE
 let &fdl = &fdl
-let s:l = 1 - ((0 * winheight(0) + 29) / 58)
+let s:l = 1 - ((0 * winheight(0) + 28) / 57)
 if s:l < 1 | let s:l = 1 | endif
 keepjumps exe s:l
 normal! zt
@@ -374,30 +383,10 @@ if s:l < 1 | let s:l = 1 | endif
 keepjumps exe s:l
 normal! zt
 keepjumps 22
-normal! 035|
+normal! 016|
 wincmd w
 2wincmd w
 wincmd =
-tabnext
-edit objects/container/tuple.cpp
-argglobal
-setlocal foldmethod=manual
-setlocal foldexpr=0
-setlocal foldmarker={{{,}}}
-setlocal foldignore=#
-setlocal foldlevel=0
-setlocal foldminlines=1
-setlocal foldnestmax=20
-setlocal foldenable
-silent! normal! zE
-let &fdl = &fdl
-let s:l = 21 - ((10 * winheight(0) + 29) / 58)
-if s:l < 1 | let s:l = 1 | endif
-keepjumps exe s:l
-normal! zt
-keepjumps 21
-normal! 050|
-lcd ~/at
 tabnext 6
 set stal=1
 if exists('s:wipebuf') && len(win_findbuf(s:wipebuf)) == 0 && getbufvar(s:wipebuf, '&buftype') isnot# 'terminal'
@@ -406,6 +395,8 @@ endif
 unlet! s:wipebuf
 set winheight=1 winwidth=20
 let &shortmess = s:shortmess_save
+let &winminheight = s:save_winminheight
+let &winminwidth = s:save_winminwidth
 let s:sx = expand("<sfile>:p:r")."x.vim"
 if filereadable(s:sx)
   exe "source " . fnameescape(s:sx)
