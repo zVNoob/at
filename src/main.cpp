@@ -3,8 +3,10 @@
 #include "parser.h"
 #include "semantic.h"
 #include "sig_bridge.h"
+#include "incremental_builder.h"
 
 #include <cstdlib>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -27,6 +29,7 @@ int main(int argc, char** argv) {
     std::string input;
     std::string inputFile;
     std::string outputFile;
+    std::string buildDir;
     bool compileMode = false;
     bool emitObj = false;
     bool emitMain = true;
@@ -40,6 +43,8 @@ int main(int argc, char** argv) {
             emitObj = true;
         } else if (arg == "--no-main") {
             emitMain = false;
+        } else if (arg == "-B" && i + 1 < argc) {
+            buildDir = argv[++i];
         } else if (arg == "-o" && i + 1 < argc) {
             outputFile = argv[++i];
         } else if (arg.substr(0, 3) == "-o=") {
@@ -76,10 +81,16 @@ y : `0` = x + 1;
 
     if (!sem.errors().empty() && compileMode) return 1;
 
+    // Create build directory if specified
+    if (!buildDir.empty()) {
+        std::filesystem::create_directories(buildDir);
+    }
+
     // Scan AST for 'import 'file.at'' statements and compile imported .at files to .o
     std::vector<std::string> importedObjFiles;
     std::vector<std::string> importedInitFuncs;
     std::map<std::string, std::string> importedModules;
+    at::IncrementalBuilder builder;
     std::function<void(const at::AstPtr&)> scanImports = [&](const at::AstPtr& node) {
         if (!node) return;
         if (node->kind == "stmt" && node->children.size() >= 3 &&
@@ -102,7 +113,24 @@ y : `0` = x + 1;
                 if (dot != std::string::npos) modName = modName.substr(0, dot);
                 importedModules[varName] = modName;
 
-                std::string importedObj = "/tmp/" + modName + ".o";
+                std::string importedObj = buildDir.empty() ? ("/tmp/" + modName + ".o") : (buildDir + "/" + modName + ".o");
+                builder.addFile(path, importedObj);
+                builder.addDependency(importedObj, path);
+
+                if (!builder.needsRecompile(path, importedObj)) {
+                    // Strip 'main' symbol from imported module;
+                    // initialization is handled by module_init constructor
+                    std::string stripCmd = "objcopy --strip-symbol main " + importedObj;
+                    std::system(stripCmd.c_str());
+                    // Rename module_init to avoid symbol collisions between modules
+                    std::string renameCmd = "objcopy --redefine-sym module_init=" + modName + "_module_init " + importedObj;
+                    std::system(renameCmd.c_str());
+                    importedObjFiles.push_back(importedObj);
+                    importedInitFuncs.push_back(modName + "_module_init");
+                    std::cout << "Imported module (cached): " << modName << " from " << path << "\n";
+                    return;
+                }
+
                 std::string importCmd = "./main --emit-obj --no-main -o " + importedObj + " " + path;
                 int ret = std::system(importCmd.c_str());
                 if (ret == 0) {
@@ -113,6 +141,7 @@ y : `0` = x + 1;
                     // Rename module_init to avoid symbol collisions between modules
                     std::string renameCmd = "objcopy --redefine-sym module_init=" + modName + "_module_init " + importedObj;
                     std::system(renameCmd.c_str());
+                    builder.markCompiled(path, importedObj);
                     importedObjFiles.push_back(importedObj);
                     importedInitFuncs.push_back(modName + "_module_init");
                     std::cout << "Imported module: " << modName << " from " << path << "\n";
@@ -139,22 +168,34 @@ y : `0` = x + 1;
 
         if (emitObj) {
             objFile = outputFile.empty() ? (baseName + ".o") : outputFile;
+            if (!buildDir.empty() && outputFile.empty()) {
+                objFile = buildDir + "/" + baseName + ".o";
+            } else if (!buildDir.empty() && !outputFile.empty()) {
+                objFile = buildDir + "/" + outputFile;
+            }
             outFile = "";
         } else if (isSharedLib) {
             objFile = baseName + ".o";
+            if (!buildDir.empty()) objFile = buildDir + "/" + objFile;
             outFile = outputFile.empty() ? (baseName + ".so") : outputFile;
         } else {
             outFile = outputFile.empty() ? baseName : outputFile;
-            objFile = outFile + ".o";
+            objFile = buildDir.empty() ? (outFile + ".o") : (buildDir + "/" + outFile + ".o");
         }
 
-        at::CodeGen cg;
-        cg.setSignatures(at::declsFromScope(*sem.globalScope()));
-        if (!cg.compile(ast, objFile, emitMain, importedInitFuncs)) {
-            std::cerr << "codegen failed\n";
-            return 1;
+        // Check if main needs recompilation
+        if (builder.needsRecompile(inputFile, objFile)) {
+            at::CodeGen cg;
+            cg.setSignatures(at::declsFromScope(*sem.globalScope()));
+            if (!cg.compile(ast, objFile, emitMain, importedInitFuncs)) {
+                std::cerr << "codegen failed\n";
+                return 1;
+            }
+            builder.markCompiled(inputFile, objFile);
+            std::cout << "compiled to " << objFile << "\n";
+        } else {
+            std::cout << "cached: " << objFile << "\n";
         }
-        std::cout << "compiled to " << objFile << "\n";
 
         if (!emitObj) {
             if (isSharedLib) {
