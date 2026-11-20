@@ -1,0 +1,5 @@
+io = 'std_modules/io.at';
+io.println("Hello from io module!");
+io.stdout.write("Direct stdout write\n");
+io.stdout.flush();
+io.println("Done");

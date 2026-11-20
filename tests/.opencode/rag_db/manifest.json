@@ -1,0 +1,54 @@
+{
+  "files": {
+    "/home/may/Projects/at/tests/compile_test.cpp": {
+      "hash": "adcf1fdbbd316420bcee1aa2497ca0ee7da75f73fb1f4545dfdb5e6430b5293a",
+      "chunkCount": 1,
+      "indexedAt": 1793012611746,
+      "mtime": 1792904755534.3083,
+      "size": 866,
+      "descHash": "ecd0fddd591f6543"
+    },
+    "/home/may/Projects/at/tests/interpreter_import.cpp": {
+      "hash": "3be282d2f2cc1806ed511fe4de1a20776c29f9e951ee14ff128c538932d949cd",
+      "chunkCount": 1,
+      "indexedAt": 1793012611746,
+      "mtime": 1792903968070.748,
+      "size": 882,
+      "descHash": "ecd0fddd591f6543"
+    },
+    "/home/may/Projects/at/tests/lexer_ws.cpp": {
+      "hash": "7f73b4ca384c4679f112f5d04bd9a03984fe1a908302bae824f27187cf69b039",
+      "chunkCount": 1,
+      "indexedAt": 1793012611746,
+      "mtime": 1792901800330.791,
+      "size": 416,
+      "descHash": "ecd0fddd591f6543"
+    },
+    "/home/may/Projects/at/tests/parser_basic.cpp": {
+      "hash": "ce27dff963bc660e393d35ae5debbec5eb3f4f9dda40e3e53f6db37d51bea9e8",
+      "chunkCount": 1,
+      "indexedAt": 1793012611746,
+      "mtime": 1792901800345.4727,
+      "size": 282,
+      "descHash": "ecd0fddd591f6543"
+    },
+    "/home/may/Projects/at/tests/parser_features.cpp": {
+      "hash": "fea5520b03d257def037fa7f4961e9a0bd3af6d2e2562ce36f3cfc07c412939f",
+      "chunkCount": 1,
+      "indexedAt": 1793012611746,
+      "mtime": 1792902065693.7346,
+      "size": 1387,
+      "descHash": "ecd0fddd591f6543"
+    },
+    "/home/may/Projects/at/tests/semantic_constraint.cpp": {
+      "hash": "d9a21c6d14ab69a36f132ff7eeb7ca8263806994937a98ee66117218e70bee33",
+      "chunkCount": 1,
+      "indexedAt": 1793012611746,
+      "mtime": 1792901800359.6184,
+      "size": 565,
+      "descHash": "ecd0fddd591f6543"
+    }
+  },
+  "schemaVersion": 3,
+  "lastIndexedAt": 1793012611755
+}

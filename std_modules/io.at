@@ -1,0 +1,93 @@
+InStream := # (handle : `0`) {
+    self.handle = handle;
+    self.read = @ (size : `0`) -> (`""`) {
+        @< at_fread(self.handle, size);
+    };
+    self.readline = @ () -> (`""`) {
+        @< at_fgets(self.handle, 4096);
+    };
+    self.read_all = @ () -> (`""`) {
+        @< at_fread(handle, 65536);
+    };
+    self.close = @ () {
+        at_fclose(self.handle);
+    };
+    self.flush = @ () -> (`0`) {
+        @< 0;
+    };
+    self.is_closed = @ () -> (`0`) {
+        @< 0;
+    };
+    @< self;
+};
+OutStream := # (handle : `0`) {
+    self.handle = handle;
+    self.write = @ (s : `""`) -> (`0`) {
+        @< at_fwrite(self.handle, s);
+    };
+    self.writeline = @ (s : `""`) -> (`0`) {
+        @< at_fwrite(self.handle, s);
+    };
+    self.flush = @ () -> (`0`) {
+        @< at_fflush(self.handle);
+    };
+    self.close = @ () {
+        at_fflush(self.handle);
+        at_fclose(self.handle);
+    };
+    self.is_closed = @ () -> (`0`) {
+        @< 0;
+    };
+    @< self;
+};
+InOutStream := # (handle : `0`) {
+    self.handle = handle;
+    self.read = @ (size : `0`) -> (`""`) {
+        @< at_fread(self.handle, size);
+    };
+    self.readline = @ () -> (`""`) {
+        @< at_fgets(self.handle, 4096);
+    };
+    self.read_all = @ () -> (`""`) {
+        @< at_fread(handle, 65536);
+    };
+    self.write = @ (s : `""`) -> (`0`) {
+        @< at_fwrite(self.handle, s);
+    };
+    self.writeline = @ (s : `""`) -> (`0`) {
+        @< at_fwrite(self.handle, s);
+    };
+    self.flush = @ () -> (`0`) {
+        @< at_fflush(self.handle);
+    };
+    self.close = @ () {
+        at_fflush(self.handle);
+        at_fclose(self.handle);
+    };
+    self.seek = @ (offset : `0`, whence : `0`) -> (`0`) {
+        @< at_fseek(self.handle, offset, whence);
+    };
+    self.tell = @ () -> (`0`) {
+        @< at_ftell(self.handle);
+    };
+    self.is_closed = @ () -> (`0`) {
+        @< 0;
+    };
+    @< self;
+};
+open_file = @ (path : `""`, mode : `0`) -> (`0`) {
+    @< at_fopen(path, mode);
+};
+stdin_handle = at_stdin();
+stdout_handle = at_stdout();
+stderr_handle = at_stderr();
+stdin = InStream <{ stdin_handle }>;
+stdout = OutStream <{ stdout_handle }>;
+stderr = OutStream <{ stderr_handle }>;
+print = @ (s : `""`) {
+    at_fwrite(stdout_handle, s);
+};
+println = @ (s : `""`) {
+    at_fwrite(stdout_handle, s);
+    at_fwrite(stdout_handle, "\n");
+};
