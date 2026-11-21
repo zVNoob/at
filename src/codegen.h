@@ -23,7 +23,8 @@ public:
     ~CodeGen();
 
     bool compile(const AstPtr& root, const std::string& outputPath, bool isMainModule = false,
-                 const std::vector<std::string>& initFuncs = {});
+                 const std::vector<std::string>& initFuncs = {},
+                 const std::string& initFuncName = "");
 
     void setSignatures(std::vector<BinSigDecl> sigs) { sigs_ = std::move(sigs); haveSigs_ = true; }
 

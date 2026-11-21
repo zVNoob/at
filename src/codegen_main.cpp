@@ -56,7 +56,7 @@ void CodeGen::declareRuntimeOps() {
 }
 
 bool CodeGen::compile(const AstPtr& root, const std::string& outputPath, bool isMainModule,
-                     const std::vector<std::string>& initFuncs) {
+                     const std::vector<std::string>& initFuncs, const std::string& initFuncName) {
     module_ = std::make_unique<llvm::Module>("at_module", context_);
     templateShapes_.clear();
     rtti_ = std::make_unique<RttiManager>(module_.get());
@@ -140,16 +140,11 @@ bool CodeGen::compile(const AstPtr& root, const std::string& outputPath, bool is
         }
         currentFunction_ = nullptr;
     } else {
-        // Imported module: main just returns 0, top-level code goes into module_init
-        llvm::FunctionType* mainType = llvm::FunctionType::get(builder_.getInt64Ty(), false);
-        llvm::Function* mainFn = llvm::Function::Create(mainType, llvm::Function::ExternalLinkage, "main", module_.get());
-        llvm::BasicBlock* mainEntry = llvm::BasicBlock::Create(context_, "entry", mainFn);
-        builder_.SetInsertPoint(mainEntry);
-        builder_.CreateRet(builder_.getInt64(0));
+        // Imported module: no main, top-level code goes into initFuncName
         currentFunction_ = nullptr;
 
         llvm::FunctionType* initType = llvm::FunctionType::get(builder_.getInt64Ty(), false);
-        llvm::Function* initFn = llvm::Function::Create(initType, llvm::Function::ExternalLinkage, "module_init", module_.get());
+        llvm::Function* initFn = llvm::Function::Create(initType, llvm::Function::ExternalLinkage, initFuncName, module_.get());
         llvm::BasicBlock* initEntry = llvm::BasicBlock::Create(context_, "entry", initFn);
         builder_.SetInsertPoint(initEntry);
         currentFunction_ = initFn;

@@ -5,7 +5,6 @@
 #include "sig_bridge.h"
 #include "incremental_builder.h"
 
-#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -13,6 +12,9 @@
 #include <map>
 #include <functional>
 #include <vector>
+#include <sys/wait.h>
+#include <unistd.h>
+#include <cstring>
 
 namespace {
 void dump(const at::AstPtr& node, int indent = 0) {
@@ -22,6 +24,104 @@ void dump(const at::AstPtr& node, int indent = 0) {
     if (!node->text.empty()) std::cout << " [" << node->text << "]";
     std::cout << "\n";
     for (const auto& c : node->children) dump(c, indent + 1);
+}
+
+// Compile an imported .at file in-process (no subprocess, no shell injection).
+bool compileImportedModule(const std::string& path, const std::string& outputPath,
+                          const std::string& initFuncName) {
+    std::ifstream f(path);
+    if (!f) {
+        std::cerr << "Warning: cannot open imported module: " << path << "\n";
+        return false;
+    }
+    std::string input((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+
+    at::AstPtr ast = at::parseSource(input);
+    if (!ast) {
+        std::cerr << "Warning: parse failed for imported module: " << path << "\n";
+        return false;
+    }
+
+    at::SemanticAnalyzer sem;
+    sem.analyze(ast);
+    if (!sem.errors().empty()) {
+        std::cerr << "Warning: semantic errors in imported module: " << path << "\n";
+        for (const auto& e : sem.errors()) {
+            std::cerr << "  " << e.message << "\n";
+        }
+        return false;
+    }
+
+    at::CodeGen cg;
+    cg.setSignatures(at::declsFromScope(*sem.globalScope()));
+    if (!cg.compile(ast, outputPath, false, {}, initFuncName)) {
+        std::cerr << "Warning: codegen failed for imported module: " << path << "\n";
+        return false;
+    }
+    return true;
+}
+
+// Run cc linker via fork+execvp (no shell injection).
+bool linkExecutable(const std::vector<std::string>& objFiles,
+                    const std::string& outputPath) {
+    pid_t pid = fork();
+    if (pid < 0) {
+        std::cerr << "linking failed: fork error\n";
+        return false;
+    }
+    if (pid == 0) {
+        // Child process
+        std::vector<char*> args;
+        args.push_back(const_cast<char*>("cc"));
+        args.push_back(const_cast<char*>("-no-pie"));
+        for (const auto& o : objFiles) {
+            args.push_back(const_cast<char*>(o.c_str()));
+        }
+        args.push_back(const_cast<char*>("src/at_runtime.cpp"));
+        args.push_back(const_cast<char*>("-o"));
+        args.push_back(const_cast<char*>(outputPath.c_str()));
+        args.push_back(nullptr);
+
+        execvp("cc", args.data());
+        _exit(127);
+    }
+
+    // Parent process
+    int status;
+    waitpid(pid, &status, 0);
+    if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
+        return true;
+    }
+    std::cerr << "linking failed (exit " << WEXITSTATUS(status) << ")\n";
+    return false;
+}
+
+bool linkSharedLib(const std::string& objFile, const std::string& outputPath) {
+    pid_t pid = fork();
+    if (pid < 0) {
+        std::cerr << "linking failed: fork error\n";
+        return false;
+    }
+    if (pid == 0) {
+        std::vector<char*> args;
+        args.push_back(const_cast<char*>("cc"));
+        args.push_back(const_cast<char*>("-shared"));
+        args.push_back(const_cast<char*>(objFile.c_str()));
+        args.push_back(const_cast<char*>("-o"));
+        args.push_back(const_cast<char*>(outputPath.c_str()));
+        args.push_back(nullptr);
+
+        execvp("cc", args.data());
+        _exit(127);
+    }
+
+    int status;
+    waitpid(pid, &status, 0);
+    if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
+        return true;
+    }
+    std::cerr << "linking failed (exit " << WEXITSTATUS(status) << ")\n";
+    return false;
 }
 }
 
@@ -59,8 +159,8 @@ int main(int argc, char** argv) {
         input.assign((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
     } else {
         input = R"(
-x : `0` = 42;
-y : `0` = x + 1;
+x : \`0\` = 42;
+y : \`0\` = x + 1;
 )";
     }
 
@@ -118,32 +218,16 @@ y : `0` = x + 1;
                 builder.addDependency(importedObj, path);
 
                 if (!builder.needsRecompile(path, importedObj)) {
-                    // Strip 'main' symbol from imported module;
-                    // initialization is handled by module_init constructor
-                    std::string stripCmd = "objcopy --strip-symbol main " + importedObj;
-                    std::system(stripCmd.c_str());
-                    // Rename module_init to avoid symbol collisions between modules
-                    std::string renameCmd = "objcopy --redefine-sym module_init=" + modName + "_module_init " + importedObj;
-                    std::system(renameCmd.c_str());
                     importedObjFiles.push_back(importedObj);
-                    importedInitFuncs.push_back(modName + "_module_init");
+                    importedInitFuncs.push_back(modName + "_init");
                     std::cout << "Imported module (cached): " << modName << " from " << path << "\n";
                     return;
                 }
 
-                std::string importCmd = "./main --emit-obj --no-main -o " + importedObj + " " + path;
-                int ret = std::system(importCmd.c_str());
-                if (ret == 0) {
-                    // Strip 'main' symbol from imported module;
-                    // initialization is handled by module_init constructor
-                    std::string stripCmd = "objcopy --strip-symbol main " + importedObj;
-                    std::system(stripCmd.c_str());
-                    // Rename module_init to avoid symbol collisions between modules
-                    std::string renameCmd = "objcopy --redefine-sym module_init=" + modName + "_module_init " + importedObj;
-                    std::system(renameCmd.c_str());
+                if (compileImportedModule(path, importedObj, modName + "_init")) {
                     builder.markCompiled(path, importedObj);
                     importedObjFiles.push_back(importedObj);
-                    importedInitFuncs.push_back(modName + "_module_init");
+                    importedInitFuncs.push_back(modName + "_init");
                     std::cout << "Imported module: " << modName << " from " << path << "\n";
                 } else {
                     std::cerr << "Warning: failed to compile imported module: " << path << "\n";
@@ -199,28 +283,14 @@ y : `0` = x + 1;
 
         if (!emitObj) {
             if (isSharedLib) {
-                std::string linkCmd = "cc -shared " + objFile + " -o " + outFile;
-                std::cout << "linking: " << linkCmd << "\n";
-                int ret = std::system(linkCmd.c_str());
-                if (ret != 0) {
-                    std::cerr << "linking failed (exit " << ret << ")\n";
+                if (!linkSharedLib(objFile, outFile)) {
                     return 1;
                 }
                 std::cout << "linked shared library to " << outFile << "\n";
             } else {
                 // Link imported modules first (their constructors run before main),
                 // then main module, then runtime support
-                std::string linkCmd = "cc -no-pie ";
-                for (const auto& o : importedObjFiles) {
-                    linkCmd += " " + o;
-                }
-                linkCmd += " " + objFile;
-                linkCmd += " src/at_runtime.cpp";
-                linkCmd += " -o " + outFile;
-                std::cout << "linking: " << linkCmd << "\n";
-                int ret = std::system(linkCmd.c_str());
-                if (ret != 0) {
-                    std::cerr << "linking failed (exit " << ret << ")\n";
+                std::vector<std::string> allObjs = importedObjFiles; allObjs.push_back(objFile); if (!linkExecutable(allObjs, outFile)) {
                     return 1;
                 }
                 std::cout << "linked to " << outFile << "\n";
