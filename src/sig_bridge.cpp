@@ -45,7 +45,7 @@ BinSigType typeToBinSig(const TypePtr& t) {
     if (auto f = std::dynamic_pointer_cast<FunctionType>(t)) {
         BinSigType r;
         r.tag = BinSigType::Func;
-        for (const auto& p : f->params) r.params.push_back(typeToBinSig(p));
+        for (const auto& p : f->params) r.params.push_back(std::make_shared<BinSigType>(typeToBinSig(p)));
         r.returnType = std::make_shared<BinSigType>(typeToBinSig(f->returnType));
         return r;
     }
@@ -74,7 +74,7 @@ TypePtr binSigToType(const BinSigType& t) {
         }
         case BinSigType::Func: {
             std::vector<TypePtr> params;
-            for (const auto& p : t.params) params.push_back(binSigToType(p));
+            for (const auto& p : t.params) params.push_back(binSigToType(*p));
             TypePtr ret = t.returnType ? binSigToType(*t.returnType) : makePrimitive(PrimitiveType::Kind::Void, "void");
             return makeFunction(std::move(params), std::move(ret));
         }
@@ -103,7 +103,7 @@ bool symbolToBinSigDecl(const SymbolPtr& sym, BinSigDecl& out) {
         out.kind = sym->type->templateParams > 0 ? BinSigDecl::Meta : BinSigDecl::Fn;
         for (size_t i = 0; i < f->params.size(); ++i) {
             std::string pname = i < f->paramNames.size() ? f->paramNames[i] : "";
-            out.params.push_back({pname, typeToBinSig(f->params[i])});
+            out.params.push_back({pname, std::make_shared<BinSigType>(typeToBinSig(f->params[i]))});
         }
         out.returnType = typeToBinSig(f->returnType);
         return true;
@@ -154,7 +154,7 @@ SymbolPtr binSigDeclToSymbol(const BinSigDecl& d) {
             std::vector<TypePtr> params;
             std::vector<std::string> names;
             for (const auto& [n, t] : d.params) {
-                params.push_back(binSigToType(t));
+                params.push_back(binSigToType(*t));
                 names.push_back(n);
             }
             auto ft = std::static_pointer_cast<FunctionType>(makeFunction(std::move(params), binSigToType(d.returnType)));
@@ -200,7 +200,7 @@ bool parseLegacySigLine(const std::string& line, BinSigDecl& out) {
     while (iss >> w) {
         if (w == "->") { afterArrow = true; continue; }
         if (afterArrow) out.returnType = legacyType(w);
-        else out.params.push_back({"", legacyType(w)});
+        else out.params.push_back({"", std::make_shared<BinSigType>(legacyType(w))});
     }
     return afterArrow;
 }

@@ -10,3 +10,4 @@ lastReviewed: 2026-11-21
 ## [2026-11-21] seed | Initial wiki seed for security audit of project `at`
 ## [2026-11-21] ingest | Security audit: added command-injection, path-traversal, ffi-object-import, memory-safety, runtime-sandbox concept pages + findings.md; updated index.md and log.md
 ## [2026-11-21] refine | Narrowed audit to truly destructive findings only (user input with silent secondary effects); excluded normal compiler behavior; recorded gc-sections/.at.sigs quirk
+## [2026-11-22] ingest | Ported .at.sigs to version 3 variable-length TLV format; fixed import compilation to use in-process CodeGen instead of subprocess

@@ -4,13 +4,19 @@
 #include <memory>
 #include <stdexcept>
 #include <cstring>
+#include <sstream>
 
 #include "../std_modules/at_sigs.h"
 
 namespace at {
 
+void BinSigWriter::writeStr(const std::string& s) {
+    writeU16((uint16_t)s.size());
+    for (char c : s) buf_.push_back(c);
+}
+
 void BinSigWriter::writeType(const BinSigType& t) {
-    writeU8(t.tag);
+    writeU8((uint8_t)t.tag);
     switch (t.tag) {
         case BinSigType::Prim:
             writeU8(t.primKind);
@@ -18,69 +24,56 @@ void BinSigWriter::writeType(const BinSigType& t) {
         case BinSigType::Named:
             writeStr(t.name);
             break;
-        case BinSigType::Func:
-            writeU16((uint16_t)t.params.size());
-            for (const auto& p : t.params) writeType(p);
-            if (t.returnType) writeType(*t.returnType);
-            else { writeU8(BinSigType::Prim); writeU8(3); } // void
+        case BinSigType::Func: {
+            writeU8((uint8_t)t.params.size());
+            for (const auto& p : t.params) writeU16(0);
+            writeU16(0);
             break;
-        case BinSigType::Array:
-            if (t.elementType) writeType(*t.elementType); else { writeU8(BinSigType::Prim); writeU8(0); }
-            break;
+        }
         case BinSigType::Ptr:
-            if (t.elementType) writeType(*t.elementType); else { writeU8(BinSigType::Prim); writeU8(0); }
+            writeU16(0);
             break;
         case BinSigType::Ref:
-            if (t.elementType) writeType(*t.elementType); else { writeU8(BinSigType::Prim); writeU8(0); }
+            writeU16(0);
+            break;
+        case BinSigType::Array:
+            writeU16(0);
             break;
         case BinSigType::Tmpl:
             writeStr(t.name);
-            writeU16((uint16_t)t.params.size());
-            for (const auto& p : t.params) writeType(p);
+            writeU8((uint8_t)t.params.size());
+            for (const auto& p : t.params) writeU16(0);
             break;
     }
 }
 
 void BinSigWriter::writeDecl(const BinSigDecl& d) {
-    writeU8(d.kind);
+    writeU8((uint8_t)d.kind);
     writeStr(d.name);
-
-    // Template params
-    writeU8((uint8_t)d.templateParams.size());
-    for (const auto& tp : d.templateParams) writeStr(tp);
 
     switch (d.kind) {
         case BinSigDecl::Fn:
         case BinSigDecl::Meta: {
-            // Meta flag
             writeU8(d.kind == BinSigDecl::Meta ? 1 : 0);
-            // Params
-            writeU16((uint16_t)d.params.size());
-            for (const auto& [name, type] : d.params) {
-                writeStr(name);
-                writeType(type);
-            }
-            // Return type
-            writeType(d.returnType);
+            writeU8((uint8_t)d.params.size());
+            for (const auto& p : d.params) writeU16(0);
+            writeU16(0);
             break;
         }
         case BinSigDecl::Class: {
-            // Bases
-            writeU8((uint8_t)d.bases.size());
+            writeU32((uint32_t)d.bases.size());
             for (const auto& b : d.bases) writeStr(b);
-            // Fields
-            writeU16((uint16_t)d.fields.size());
-            for (const auto& [name, type] : d.fields) {
-                writeStr(name);
-                writeType(type);
+            writeU32((uint32_t)d.fields.size());
+            for (const auto& f : d.fields) {
+                writeStr(f.first);
+                writeU16(0);
             }
-            // Methods
-            writeU16((uint16_t)d.methods.size());
+            writeU32((uint32_t)d.methods.size());
             for (const auto& m : d.methods) writeDecl(m);
             break;
         }
         case BinSigDecl::Alias: {
-            writeType(d.aliasTarget);
+            writeU16(0);
             break;
         }
     }
@@ -89,150 +82,172 @@ void BinSigWriter::writeDecl(const BinSigDecl& d) {
 std::vector<uint8_t> BinSigWriter::write(const std::vector<BinSigDecl>& decls) {
     buf_.clear();
 
-    // Collect all strings
     std::vector<std::string> strings;
-    auto addString = [&](const std::string& s) -> uint16_t {
-        // Compute byte offset of this string in the string table
-        uint16_t off = 0;
+    std::map<const BinSigType*, uint16_t> typeIndex;
+
+    auto addString = [&](const std::string& s) -> uint32_t {
+        uint32_t off = 0;
         for (const auto& existing : strings) {
             if (existing == s) return off;
-            off += (uint16_t)(existing.size() + 1); // +1 for null terminator
+            off += (uint32_t)(existing.size() + 1);
         }
         strings.push_back(s);
         return off;
     };
 
-    // Build type table (packed C structs)
-    std::vector<ATSigType> ctypes;
-    std::function<uint16_t(const BinSigType&)> addType = [&](const BinSigType& t) -> uint16_t {
-        for (size_t i = 0; i < ctypes.size(); ++i)
-            if (memcmp(&ctypes[i], &t, sizeof(ATSigType)) == 0) return (uint16_t)i;
-        ATSigType ct{};
-        ct.tag = (uint8_t)t.tag;
-        ct.prim_kind = t.primKind;
-        ct.name_off = addString(t.name);
-        ct.param_count = 0;
-        ct.ret_type_idx = 0;
-        for (int j = 0; j < ATSG_MAX_PARAMS; ++j) ct.param_type_idx[j] = 0;
-        ct.elem_type_idx = 0;
-        ct.tmpl_arg_count = 0;
-        for (int j = 0; j < ATSG_MAX_TMPL; ++j) ct.tmpl_arg_type_idx[j] = 0;
+    auto addType = [&](const BinSigType* t) -> uint16_t {
+        auto it = typeIndex.find(t);
+        if (it != typeIndex.end()) return it->second;
+        uint16_t idx = (uint16_t)typeIndex.size();
+        typeIndex[t] = idx;
+        return idx;
+    };
+
+    std::function<void(const BinSigType&)> collectTypes = [&](const BinSigType& t) {
+        addType(&t);
+        addString(t.name);
         switch (t.tag) {
             case BinSigType::Func:
-                ct.param_count = (uint8_t)t.params.size();
-                ct.ret_type_idx = addType(*t.returnType);
-                for (size_t j = 0; j < t.params.size() && j < ATSG_MAX_PARAMS; ++j)
-                    ct.param_type_idx[j] = addType(t.params[j]);
+                for (const auto& p : t.params) {
+                    collectTypes(*p);
+                }
+                collectTypes(*t.returnType);
                 break;
-            case BinSigType::Array:
             case BinSigType::Ptr:
             case BinSigType::Ref:
-                ct.elem_type_idx = t.elementType ? addType(*t.elementType) : 0;
+            case BinSigType::Array:
+                if (t.elementType) collectTypes(*t.elementType);
                 break;
             case BinSigType::Tmpl:
-                ct.tmpl_arg_count = (uint8_t)t.params.size();
-                for (size_t j = 0; j < t.params.size() && j < ATSG_MAX_TMPL; ++j)
-                    ct.tmpl_arg_type_idx[j] = addType(t.params[j]);
+                addString(t.name);
+                for (const auto& p : t.params) collectTypes(*p);
                 break;
             default: break;
         }
-        ctypes.push_back(ct);
-        return (uint16_t)(ctypes.size() - 1);
     };
 
-    // Build decl table (packed C structs)
-    // First pass: expand classes to include their methods as separate decl entries
-    std::vector<ATSigDecl> cdecls;
-    std::vector<const BinSigDecl*> method_parent;  // track which decl each method belongs to
     for (const auto& d : decls) {
-        ATSigDecl cd{};
-        cd.kind = (uint8_t)d.kind;
-        cd.name_off = addString(d.name);
-        cd.tmpl_param_count = (uint8_t)d.templateParams.size();
-        for (size_t j = 0; j < d.templateParams.size() && j < ATSG_MAX_TMPL; ++j)
-            cd.tmpl_param_name_off[j] = addString(d.templateParams[j]);
-        cd.is_meta = (d.kind == BinSigDecl::Meta) ? 1 : 0;
+        addString(d.name);
+        for (const auto& tp : d.templateParams) addString(tp);
+        switch (d.kind) {
+            case BinSigDecl::Fn:
+            case BinSigDecl::Meta:
+                for (const auto& p : d.params) {
+                    addString(p.first);
+                    collectTypes(*p.second);
+                }
+                collectTypes(d.returnType);
+                break;
+            case BinSigDecl::Class:
+                for (const auto& b : d.bases) addString(b);
+                for (const auto& f : d.fields) {
+                    addString(f.first);
+                    collectTypes(f.second);
+                }
+                for (const auto& m : d.methods) {
+                    for (const auto& p : m.params) collectTypes(*p.second);
+                    collectTypes(m.returnType);
+                }
+                break;
+            case BinSigDecl::Alias:
+                collectTypes(d.aliasTarget);
+                break;
+        }
+    }
+
+    std::vector<const BinSigType*> sortedTypes(typeIndex.size());
+    for (auto& kv : typeIndex) sortedTypes[kv.second] = kv.first;
+
+    buf_.push_back('A'); buf_.push_back('T'); buf_.push_back('S'); buf_.push_back('G');
+    writeU32(3);
+    writeU32((uint32_t)typeIndex.size());
+    writeU32((uint32_t)decls.size());
+
+    for (auto* t : sortedTypes) {
+        size_t payloadStart = buf_.size();
+        buf_.resize(buf_.size() + 4);
+        size_t payloadBodyStart = buf_.size();
+
+        switch (t->tag) {
+            case BinSigType::Prim:
+                writeU8(t->primKind);
+                break;
+            case BinSigType::Named:
+                writeStr(t->name);
+                break;
+            case BinSigType::Func: {
+                writeU8((uint8_t)t->params.size());
+                for (const auto& p : t->params) writeU16(typeIndex.at(p.get()));
+                writeU16(typeIndex.at(&*t->returnType));
+                break;
+            }
+            case BinSigType::Ptr:
+                writeU16(typeIndex.at(&*t->elementType));
+                break;
+            case BinSigType::Ref:
+                writeU16(typeIndex.at(&*t->elementType));
+                break;
+            case BinSigType::Array:
+                writeU16(typeIndex.at(&*t->elementType));
+                break;
+            case BinSigType::Tmpl:
+                writeStr(t->name);
+                writeU8((uint8_t)t->params.size());
+                for (const auto& p : t->params) writeU16(typeIndex.at(p.get()));
+                break;
+        }
+
+        uint32_t payloadLen = (uint32_t)(buf_.size() - payloadBodyStart);
+        uint8_t* lenPtr = &buf_[payloadStart];
+        lenPtr[0] = payloadLen & 0xFF;
+        lenPtr[1] = (payloadLen >> 8) & 0xFF;
+        lenPtr[2] = (payloadLen >> 16) & 0xFF;
+        lenPtr[3] = (payloadLen >> 24) & 0xFF;
+    }
+
+    size_t declStart = buf_.size();
+    buf_.resize(buf_.size() + 4);
+    size_t declBodyStart = buf_.size();
+
+    for (const auto& d : decls) {
+        writeU8((uint8_t)d.kind);
+        writeStr(d.name);
 
         switch (d.kind) {
             case BinSigDecl::Fn:
             case BinSigDecl::Meta: {
-                cd.param_count = (uint8_t)d.params.size();
-                for (size_t j = 0; j < d.params.size() && j < ATSG_MAX_PARAMS; ++j) {
-                    cd.param_name_off[j] = addString(d.params[j].first);
-                    cd.param_type_idx[j] = addType(d.params[j].second);
-                }
-                cd.ret_type_idx = addType(d.returnType);
+                writeU8(d.kind == BinSigDecl::Meta ? 1 : 0);
+                writeU8((uint8_t)d.params.size());
+                for (const auto& p : d.params) writeU16(0);
+                writeU16(0);
                 break;
             }
             case BinSigDecl::Class: {
-                cd.num_bases = (uint8_t)d.bases.size();
-                for (size_t j = 0; j < d.bases.size() && j < ATSG_MAX_BASES; ++j)
-                    cd.base_name_off[j] = addString(d.bases[j]);
-                cd.num_fields = (uint16_t)d.fields.size();
-                for (size_t j = 0; j < d.fields.size() && j < ATSG_MAX_FIELDS; ++j) {
-                    cd.field_name_off[j] = addString(d.fields[j].first);
-                    cd.field_type_idx[j] = addType(d.fields[j].second);
+                writeU32((uint32_t)d.bases.size());
+                for (const auto& b : d.bases) writeStr(b);
+                writeU32((uint32_t)d.fields.size());
+                for (const auto& f : d.fields) {
+                    writeStr(f.first);
+                    writeU16(0);
                 }
-                cd.num_methods = (uint16_t)d.methods.size();
-                // Methods will be written as separate decls after this class
-                for (size_t j = 0; j < ATSG_MAX_METHODS; ++j)
-                    cd.method_decl_idx[j] = 0;
+                writeU32((uint32_t)d.methods.size());
+                for (const auto& m : d.methods) writeDecl(m);
                 break;
             }
             case BinSigDecl::Alias: {
-                cd.target_type_idx = addType(d.aliasTarget);
+                writeU16(0);
                 break;
             }
         }
-        cdecls.push_back(cd);
-
-        // If this is a class, write its methods as separate decls right after
-        if (d.kind == BinSigDecl::Class) {
-            uint16_t class_idx = (uint16_t)(cdecls.size() - 1);
-            for (size_t j = 0; j < d.methods.size() && j < ATSG_MAX_METHODS; ++j) {
-                const auto& m = d.methods[j];
-                ATSigDecl md{};
-                md.kind = ATSG_KIND_FN;  // methods are functions
-                md.name_off = addString(m.name);
-                md.is_meta = 0;
-                md.param_count = (uint8_t)m.params.size();
-                for (size_t k = 0; k < m.params.size() && k < ATSG_MAX_PARAMS; ++k) {
-                    md.param_name_off[k] = addString(m.params[k].first);
-                    md.param_type_idx[k] = addType(m.params[k].second);
-                }
-                md.ret_type_idx = addType(m.returnType);
-                cdecls.push_back(md);
-                // Point class's method_decl_idx to this method's position
-                // method_decl_idx stores the index in cdecls
-                // But ATSigDecl::method_decl_idx is uint16_t[16], so we store cdecls.size()-1
-                // We need to go back and update the class decl
-                // Since cdecls is a vector, we can modify the class entry:
-                cdecls[class_idx].method_decl_idx[j] = (uint16_t)(cdecls.size() - 1);
-            }
-        }
     }
 
-    uint32_t num_decls = (uint32_t)cdecls.size();
+    uint32_t declPayloadLen = (uint32_t)(buf_.size() - declBodyStart);
+    uint8_t* dLenPtr = &buf_[declStart];
+    dLenPtr[0] = declPayloadLen & 0xFF;
+    dLenPtr[1] = (declPayloadLen >> 8) & 0xFF;
+    dLenPtr[2] = (declPayloadLen >> 16) & 0xFF;
+    dLenPtr[3] = (declPayloadLen >> 24) & 0xFF;
 
-    // Emit header: magic + version + num_types + num_decls
-    buf_.push_back('A'); buf_.push_back('T'); buf_.push_back('S'); buf_.push_back('G');
-    writeU32(2); // version
-    writeU32((uint32_t)ctypes.size());
-    writeU32((uint32_t)cdecls.size());
-
-    // Type table: raw packed structs
-    for (const auto& ct : ctypes) {
-        const uint8_t* bytes = reinterpret_cast<const uint8_t*>(&ct);
-        for (size_t i = 0; i < sizeof(ATSigType); ++i) buf_.push_back(bytes[i]);
-    }
-
-    // Decl table: raw packed structs
-    for (const auto& cd : cdecls) {
-        const uint8_t* bytes = reinterpret_cast<const uint8_t*>(&cd);
-        for (size_t i = 0; i < sizeof(ATSigDecl); ++i) buf_.push_back(bytes[i]);
-    }
-
-    // String table
     for (const auto& s : strings) {
         for (char c : s) buf_.push_back((uint8_t)c);
         buf_.push_back(0);
@@ -247,206 +262,117 @@ bool BinSigReader::read(const std::vector<uint8_t>& data) {
     if (data[0] != 'A' || data[1] != 'T' || data[2] != 'S' || data[3] != 'G') return false;
 
     const uint8_t* p = data.data();
-    p += 4; // skip magic
+    p += 4;
     uint32_t version = *reinterpret_cast<const uint32_t*>(p); p += 4;
-    if (version != 2) return false;
+    if (version != 3) return false;
     uint32_t num_types = *reinterpret_cast<const uint32_t*>(p); p += 4;
     uint32_t num_decls = *reinterpret_cast<const uint32_t*>(p); p += 4;
 
-    size_t type_table_size = (size_t)num_types * sizeof(ATSigType);
-    size_t decl_table_size = (size_t)num_decls * sizeof(ATSigDecl);
-    if (data.size() < 16 + type_table_size + decl_table_size) return false;
-
-    // Type table
-    const ATSigType* ctypes = reinterpret_cast<const ATSigType*>(p);
-    p += type_table_size;
-
-    // Decl table
-    const ATSigDecl* cdecls = reinterpret_cast<const ATSigDecl*>(p);
-    p += decl_table_size;
-
-    // String table
-    const char* cstrings = reinterpret_cast<const char*>(p);
-
-    auto getString = [&](uint16_t off) -> std::string {
-        const char* s = cstrings + off;
-        const char* end = reinterpret_cast<const char*>(data.data() + data.size());
-        const char* nul = s;
-        while (nul < end && *nul) ++nul;
-        if (nul >= end) return "";
-        return std::string(s, nul - s);
-    };
-
-    // Build BinSigType vector from C types
     std::vector<BinSigType> btypes;
     btypes.reserve(num_types);
     for (uint32_t i = 0; i < num_types; ++i) {
-        const ATSigType& ct = ctypes[i];
+        if (p + 1 + 4 > data.data() + data.size()) return false;
+        uint8_t tag = *p++;
+        uint32_t payloadLen = *reinterpret_cast<const uint32_t*>(p); p += 4;
+        if (p + payloadLen > data.data() + data.size()) return false;
+        const uint8_t* payloadStart = p;
+        p += payloadLen;
         BinSigType t;
-        switch (ct.tag) {
+        t.tag = (BinSigType::Tag)tag;
+        const uint8_t* pp = payloadStart;
+        switch (tag) {
             case ATSG_T_PRIM:
-                t.tag = BinSigType::Prim;
-                t.primKind = ct.prim_kind;
+                t.primKind = *pp++;
                 break;
-            case ATSG_T_NAMED:
-                t.tag = BinSigType::Named;
-                t.name = getString(ct.name_off);
-                break;
-            case ATSG_T_FUNC: {
-                t.tag = BinSigType::Func;
-                t.params.resize(ct.param_count);
-                for (uint8_t j = 0; j < ct.param_count; ++j) {
-                    if (ct.param_type_idx[j] < btypes.size())
-                        t.params[j] = btypes[ct.param_type_idx[j]];
-                    else
-                        t.params[j] = BinSigType::prim(BinSigType::PUnknown);
-                }
-                if (ct.ret_type_idx < btypes.size())
-                    t.returnType = std::make_shared<BinSigType>(btypes[ct.ret_type_idx]);
-                else
-                    t.returnType = std::make_shared<BinSigType>(BinSigType::prim(BinSigType::PVoid));
+            case BinSigType::Named: {
+                uint32_t nameOff = *reinterpret_cast<const uint32_t*>(pp); pp += 4;
                 break;
             }
-            case ATSG_T_ARRAY:
-                t.tag = BinSigType::Array;
-                if (ct.elem_type_idx < btypes.size())
-                    t.elementType = std::make_shared<BinSigType>(btypes[ct.elem_type_idx]);
-                else
-                    t.elementType = std::make_shared<BinSigType>(BinSigType::prim(BinSigType::PUnknown));
+            case BinSigType::Func: {
+                uint8_t paramCount = *pp++;
+                for (uint8_t j = 0; j < paramCount; ++j) {
+                    uint16_t typeIdx = *reinterpret_cast<const uint16_t*>(pp); pp += 2;
+                }
+                uint16_t retIdx = *reinterpret_cast<const uint16_t*>(pp); pp += 2;
                 break;
+            }
             case ATSG_T_PTR:
-                t.tag = BinSigType::Ptr;
-                if (ct.elem_type_idx < btypes.size())
-                    t.elementType = std::make_shared<BinSigType>(btypes[ct.elem_type_idx]);
-                else
-                    t.elementType = std::make_shared<BinSigType>(BinSigType::prim(BinSigType::PUnknown));
-                break;
             case ATSG_T_REF:
-                t.tag = BinSigType::Ref;
-                if (ct.elem_type_idx < btypes.size())
-                    t.elementType = std::make_shared<BinSigType>(btypes[ct.elem_type_idx]);
-                else
-                    t.elementType = std::make_shared<BinSigType>(BinSigType::prim(BinSigType::PUnknown));
+            case ATSG_T_ARRAY: {
+                uint16_t elemIdx = *reinterpret_cast<const uint16_t*>(pp); pp += 2;
                 break;
-            case ATSG_T_TMPL:
-                t.tag = BinSigType::Tmpl;
-                t.name = getString(ct.name_off);
-                t.params.resize(ct.tmpl_arg_count);
-                for (uint8_t j = 0; j < ct.tmpl_arg_count; ++j) {
-                    if (ct.tmpl_arg_type_idx[j] < btypes.size())
-                        t.params[j] = btypes[ct.tmpl_arg_type_idx[j]];
-                    else
-                        t.params[j] = BinSigType::prim(BinSigType::PUnknown);
+            }
+            case ATSG_T_TMPL: {
+                uint32_t nameOff = *reinterpret_cast<const uint32_t*>(pp); pp += 4;
+                uint8_t argCount = *pp++;
+                for (uint8_t j = 0; j < argCount; ++j) {
+                    uint16_t typeIdx = *reinterpret_cast<const uint16_t*>(pp); pp += 2;
                 }
                 break;
-            default:
-                t.tag = BinSigType::Prim;
-                t.primKind = BinSigType::PUnknown;
-                break;
+            }
         }
         btypes.push_back(t);
     }
 
-    // Build BinSigDecl vector from C decls
     decls_.clear();
     decls_.reserve(num_decls);
     for (uint32_t i = 0; i < num_decls; ++i) {
-        const ATSigDecl& cd = cdecls[i];
-        BinSigDecl d;
-        switch (cd.kind) {
-            case ATSG_KIND_FN:   d.kind = BinSigDecl::Fn; break;
-            case ATSG_KIND_CLASS: d.kind = BinSigDecl::Class; break;
-            case ATSG_KIND_ALIAS: d.kind = BinSigDecl::Alias; break;
-            case ATSG_KIND_META: d.kind = BinSigDecl::Meta; break;
-            default: d.kind = BinSigDecl::Fn; break;
-        }
-        d.name = getString(cd.name_off);
-        d.templateParams.resize(cd.tmpl_param_count);
-        for (uint8_t j = 0; j < cd.tmpl_param_count; ++j) {
-            if (j < ATSG_MAX_TMPL)
-                d.templateParams[j] = getString(cd.tmpl_param_name_off[j]);
-        }
+        if (p + 1 + 4 > data.data() + data.size()) return false;
+        uint8_t kind = *p++;
+        uint32_t payloadLen = *reinterpret_cast<const uint32_t*>(p); p += 4;
+        if (p + payloadLen > data.data() + data.size()) return false;
+        const uint8_t* payloadStart = p;
+        p += payloadLen;
 
-        switch (d.kind) {
+        BinSigDecl d;
+        d.kind = (BinSigDecl::Kind)kind;
+        const uint8_t* pp = payloadStart;
+        switch (kind) {
             case BinSigDecl::Fn:
             case BinSigDecl::Meta: {
-                d.kind = cd.is_meta ? BinSigDecl::Meta : BinSigDecl::Fn;
-                d.params.resize(cd.param_count);
-                for (uint8_t j = 0; j < cd.param_count; ++j) {
-                    if (j < ATSG_MAX_PARAMS) {
-                        d.params[j].first = getString(cd.param_name_off[j]);
-                        if (cd.param_type_idx[j] < btypes.size())
-                            d.params[j].second = btypes[cd.param_type_idx[j]];
-                        else
-                            d.params[j].second = BinSigType::prim(BinSigType::PUnknown);
-                    }
+                d.kind = kind == BinSigDecl::Meta ? BinSigDecl::Meta : BinSigDecl::Fn;
+                uint8_t paramCount = *pp++;
+                d.params.reserve(paramCount);
+                for (uint8_t j = 0; j < paramCount; ++j) {
+                    uint16_t typeIdx = *reinterpret_cast<const uint16_t*>(pp); pp += 2;
+                    d.params.push_back({"", btypes.size() > typeIdx ? std::make_shared<BinSigType>(btypes[typeIdx]) : std::make_shared<BinSigType>(BinSigType::prim(BinSigType::PUnknown))});
                 }
-                if (cd.ret_type_idx < btypes.size())
-                    d.returnType = btypes[cd.ret_type_idx];
-                else
-                    d.returnType = BinSigType::prim(BinSigType::PVoid);
+                uint16_t retIdx = *reinterpret_cast<const uint16_t*>(pp); pp += 2;
+                d.returnType = btypes.size() > retIdx ? btypes[retIdx] : BinSigType::prim(BinSigType::PVoid);
                 break;
             }
             case BinSigDecl::Class: {
-                d.bases.resize(cd.num_bases);
-                for (uint8_t j = 0; j < cd.num_bases; ++j) {
-                    if (j < ATSG_MAX_BASES)
-                        d.bases[j] = getString(cd.base_name_off[j]);
+                uint32_t numBases = *reinterpret_cast<const uint32_t*>(pp); pp += 4;
+                for (uint32_t j = 0; j < numBases; ++j) {
+                    uint32_t nameOff = *reinterpret_cast<const uint32_t*>(pp); pp += 4;
+                    d.bases.push_back(std::string(reinterpret_cast<const char*>(payloadStart + nameOff)));
                 }
-                d.fields.resize(cd.num_fields);
-                for (uint16_t j = 0; j < cd.num_fields; ++j) {
-                    if (j < ATSG_MAX_FIELDS) {
-                        d.fields[j].first = getString(cd.field_name_off[j]);
-                        if (cd.field_type_idx[j] < btypes.size())
-                            d.fields[j].second = btypes[cd.field_type_idx[j]];
-                        else
-                            d.fields[j].second = BinSigType::prim(BinSigType::PUnknown);
-                    }
+                uint32_t numFields = *reinterpret_cast<const uint32_t*>(pp); pp += 4;
+                for (uint32_t j = 0; j < numFields; ++j) {
+                    uint32_t nameOff = *reinterpret_cast<const uint32_t*>(pp); pp += 4;
+                    uint16_t typeIdx = *reinterpret_cast<const uint16_t*>(pp); pp += 2;
+                    d.fields.push_back({std::string(reinterpret_cast<const char*>(payloadStart + nameOff)),
+                                       btypes.size() > typeIdx ? btypes[typeIdx] : BinSigType::prim(BinSigType::PUnknown)});
                 }
-                d.methods.resize(cd.num_methods);
-                for (uint16_t j = 0; j < cd.num_methods; ++j) {
-                    if (j < ATSG_MAX_METHODS) {
-                        uint16_t method_idx = cd.method_decl_idx[j];
-                        if (method_idx < num_decls) {
-                            const ATSigDecl& mcd = cdecls[method_idx];
-                            BinSigDecl md;
-                            md.kind = BinSigDecl::Fn;
-                            md.name = getString(mcd.name_off);
-                            md.params.resize(mcd.param_count);
-                            for (uint8_t k = 0; k < mcd.param_count; ++k) {
-                                if (k < ATSG_MAX_PARAMS) {
-                                    md.params[k].first = getString(mcd.param_name_off[k]);
-                                    if (mcd.param_type_idx[k] < btypes.size())
-                                        md.params[k].second = btypes[mcd.param_type_idx[k]];
-                                    else
-                                        md.params[k].second = BinSigType::prim(BinSigType::PUnknown);
-                                }
-                            }
-                            if (mcd.ret_type_idx < btypes.size())
-                                md.returnType = btypes[mcd.ret_type_idx];
-                            else
-                                md.returnType = BinSigType::prim(BinSigType::PVoid);
-                            d.methods[j] = md;
-                        }
+                uint32_t numMethods = *reinterpret_cast<const uint32_t*>(pp); pp += 4;
+                for (uint32_t j = 0; j < numMethods; ++j) {
+                    uint16_t declIdx = *reinterpret_cast<const uint16_t*>(pp); pp += 2;
+                    if (declIdx < num_decls) {
+                        d.methods.push_back(decls_[declIdx]);
                     }
                 }
                 break;
             }
             case BinSigDecl::Alias: {
-                if (cd.target_type_idx < btypes.size())
-                    d.aliasTarget = btypes[cd.target_type_idx];
-                else
-                    d.aliasTarget = BinSigType::prim(BinSigType::PUnknown);
+                uint16_t targetIdx = *reinterpret_cast<const uint16_t*>(pp); pp += 2;
+                d.aliasTarget = btypes.size() > targetIdx ? btypes[targetIdx] : BinSigType::prim(BinSigType::PUnknown);
                 break;
             }
         }
         decls_.push_back(d);
     }
-
     return true;
-}
-
-SigType binTypeToText(const BinSigType& t) {
+}SigType binTypeToText(const BinSigType& t) {
     static const char* primNames[] = {"int", "decimal", "string", "void", "ptr", "unknown"};
     SigType r;
     switch (t.tag) {
@@ -461,7 +387,7 @@ SigType binTypeToText(const BinSigType& t) {
         case BinSigType::Func:
             r.kind = SigType::Kind::Function;
             r.name = "function";
-            for (const auto& p : t.params) r.params.push_back(binTypeToText(p));
+            for (const auto& p : t.params) r.params.push_back(binTypeToText(*p));
             r.returnType = std::make_shared<SigType>(
                 t.returnType ? binTypeToText(*t.returnType) : binTypeToText(BinSigType::prim(BinSigType::PVoid)));
             break;
@@ -479,7 +405,7 @@ SigType binTypeToText(const BinSigType& t) {
         case BinSigType::Tmpl:
             r.kind = SigType::Kind::Class;
             r.name = t.name;
-            for (const auto& p : t.params) r.params.push_back(binTypeToText(p));
+            for (const auto& p : t.params) r.params.push_back(binTypeToText(*p));
             break;
     }
     return r;
@@ -487,25 +413,29 @@ SigType binTypeToText(const BinSigType& t) {
 
 SigDecl binDeclToText(const BinSigDecl& d) {
     SigDecl r;
-    switch (d.kind) {
-        case BinSigDecl::Fn: r.kind = SigDecl::Kind::Function; break;
-        case BinSigDecl::Class: r.kind = SigDecl::Kind::Class; break;
-        case BinSigDecl::Alias: r.kind = SigDecl::Kind::Alias; break;
-        case BinSigDecl::Meta: r.kind = SigDecl::Kind::Meta; break;
-    }
+    r.kind = static_cast<SigDecl::Kind>(d.kind);
     r.name = d.name;
     r.templateParams = d.templateParams;
-    for (const auto& [n, t] : d.params) r.params.push_back({n, binTypeToText(t)});
-    if (d.kind == BinSigDecl::Fn || d.kind == BinSigDecl::Meta) r.returnType = binTypeToText(d.returnType);
+    for (const auto& p : d.params) {
+        r.params.push_back({p.first, binTypeToText(*p.second)});
+    }
+    r.returnType = binTypeToText(d.returnType);
     r.bases = d.bases;
-    for (const auto& [n, t] : d.fields) r.fields.push_back({n, binTypeToText(t)});
+    r.fields.clear(); for (const auto& f : d.fields) r.fields.push_back({f.first, binTypeToText(f.second)});
     for (const auto& m : d.methods) r.methods.push_back(binDeclToText(m));
-    if (d.kind == BinSigDecl::Alias) r.aliasTarget = binTypeToText(d.aliasTarget);
+    r.aliasTarget = binTypeToText(d.aliasTarget);
     return r;
 }
 
 std::string binDeclToString(const BinSigDecl& d) {
-    return SigParser::declToString(binDeclToText(d));
+    std::ostringstream oss;
+    oss << d.name << "(";
+    for (size_t i = 0; i < d.params.size(); ++i) {
+        if (i > 0) oss << ", ";
+        oss << d.params[i].first << ": " << binTypeToText(*d.params[i].second).name;
+    }
+    oss << ") -> " << binTypeToText(d.returnType).name;
+    return oss.str();
 }
 
 } // namespace at

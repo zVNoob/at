@@ -11,7 +11,7 @@ void CodeGen::emitSignatureSection() {
             d.kind = BinSigDecl::Meta;
             d.name = name;
             for (unsigned i = 0; i < shape.second; ++i) d.templateParams.push_back("T" + std::to_string(i));
-            for (const auto& pn : shape.first) d.params.push_back({pn, BinSigType::prim(BinSigType::PUnknown)});
+            for (const auto& pn : shape.first) d.params.push_back({pn, std::make_shared<BinSigType>(BinSigType::prim(BinSigType::PUnknown))});
             d.returnType = BinSigType::prim(BinSigType::PUnknown);
             decls.push_back(std::move(d));
         }
