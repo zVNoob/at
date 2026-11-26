@@ -96,12 +96,16 @@ public:
 
 private:
     std::vector<uint8_t> buf_;
+    std::map<const BinSigType*, uint16_t> typeIndex_;
     void writeU8(uint8_t v) { buf_.push_back(v); }
     void writeU16(uint16_t v) { buf_.push_back(v & 0xFF); buf_.push_back((v >> 8) & 0xFF); }
     void writeU32(uint32_t v) { for (int i=0;i<4;i++) buf_.push_back((v>>(i*8))&0xFF); }
     void writeStr(const std::string& s);
-    void writeType(const BinSigType& t);
-    void writeDecl(const BinSigDecl& d);
+    void writeType(const BinSigType& t, std::map<const BinSigType*, uint16_t>& typeIndex,
+                   std::map<std::string, const BinSigType*>& canonicalTypes);
+    void writeDeclPayload(const BinSigDecl& d, std::map<const BinSigType*, uint16_t>& typeIndex,
+                          std::map<std::string, const BinSigType*>& canonicalTypes,
+                          size_t baseIndex = 0);
 };
 
 // Binary reader for version 3 TLV format

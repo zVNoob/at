@@ -7,7 +7,7 @@ CXX := g++
 LLVM_CONFIG := llvm-config-17
 LLVM_CXXFLAGS := $(shell $(LLVM_CONFIG) --cxxflags)
 LLVM_LDFLAGS := $(shell $(LLVM_CONFIG) --ldflags --libs core support native)
-LLVM_LIBS := $(shell $(LLVM_CONFIG) --libs core support native)
+LLVM_LIBS := $(shell $(LLVM_CONFIG) --libs core support native orcjit object)
 
 CXXFLAGS :=-std=c++20 -MMD -I src -I src/generated $(LLVM_CXXFLAGS) -fexceptions
 LDFLAGS := $(LLVM_LDFLAGS)

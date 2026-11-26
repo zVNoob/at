@@ -17,6 +17,11 @@
 
 namespace at {
 
+class CodeGenLower;
+
+// CodeGen: high-level code generation entry point.
+// Uses CodeGenLower internally for AST -> LLVM IR lowering.
+// Handles object file emission (compiler path).
 class CodeGen {
 public:
     CodeGen();
@@ -35,55 +40,17 @@ public:
         importedModules_[varName] = modName;
     }
 
+    // Access the underlying CodeGenLower (for advanced use / interpreter sharing).
+    CodeGenLower& lower() { return *lower_; }
+
 private:
     std::vector<BinSigDecl> sigs_;
     bool haveSigs_ = false;
-    std::map<std::string, std::pair<std::vector<std::string>, unsigned>> templateShapes_;
-    void emitSignatureSection();
+    std::string modulePrefix_;
+    std::map<std::string, std::string> importedModules_;
 
     llvm::LLVMContext context_;
-    std::unique_ptr<llvm::Module> module_;
-    llvm::IRBuilder<> builder_;
-    std::unique_ptr<RttiManager> rtti_;
-
-    std::map<std::string, llvm::Value*> namedValues_;
-    std::map<std::string, uint64_t> pinnedAddrs_;
-    std::map<std::string, llvm::Function*> templateFunctions_;
-    std::map<std::string, llvm::Function*> functions_;
-    std::map<std::string, llvm::StructType*> classStructTypes_;
-    std::map<std::string, std::vector<std::string>> classFieldNames_;
-    std::map<std::string, std::string> overloads_;
-    std::map<std::string, std::string> importedModules_;
-    std::set<std::string> publicGlobals_;
-    llvm::Function* currentFunction_ = nullptr;
-
-    std::vector<llvm::BasicBlock*> breakStack_;
-    std::vector<llvm::BasicBlock*> continueStack_;
-
-    std::string modulePrefix_;
-
-    std::string mangleName(const std::string& name) const {
-        if (publicGlobals_.count(name)) return name;
-        if (!modulePrefix_.empty()) return modulePrefix_ + "_" + name;
-        return name;
-    }
-
-    void addPublicGlobal(const std::string& name) { publicGlobals_.insert(name); }
-
-    llvm::AllocaInst* createEntryBlockAlloca(llvm::Function* function,
-                                             const std::string& varName,
-                                             llvm::Type* type);
-
-    llvm::Type* llvmTypeForAst(const AstPtr& typeNode);
-    llvm::Constant* getRttiForType(const AstPtr& typeNode);
-
-    llvm::Value* codegenExpr(const AstPtr& node);
-    void codegenStmt(const AstPtr& node);
-
-    llvm::Function* emitTemplateMetaFunc(const std::string& name, const AstPtr& tmplNode);
-    llvm::Function* emitFunction(const std::string& name, const AstPtr& funcExpr);
-    llvm::Function* emitClass(const std::string& name, const AstPtr& classNode);
-    void declareRuntimeOps();
+    std::unique_ptr<CodeGenLower> lower_;
 };
 
 static AstPtr findChild(const AstPtr& node, const std::string& kind) {

@@ -2,7 +2,7 @@
 title: Wiki Index
 tags: [catalog]
 sourceRefs: []
-lastReviewed: 2026-11-21
+lastReviewed: 2026-11-25
 ---
 
 # Wiki Index — Project `at`
@@ -21,8 +21,8 @@ lastReviewed: 2026-11-21
 - [[concepts/memory-safety]] — Memory safety and input parsing (at_fread overflow, sig_binary unaligned reads). *Out of scope for destructive audit — normal compiler/runtime behavior.*
 - [[concepts/runtime-sandbox]] — Missing sandboxing, `-no-pie`, PATH reliance, unrestricted interpreter file I/O. *Out of scope for destructive audit — hardening, not a user-input secondary effect.*
 - [[concepts/CompilerArchitecture]] — Multi-pass compiler architecture (lexer, parser, semantic, codegen, interpreter).
-- [[concepts/LanguageFeatures]] — AT language syntax and features.
-- [[concepts/StdModuleSigs]] — `.at.sigs` binary signature format and `at_sigs.h` builders.
+- [[concepts/LanguageFeatures]] — AT language syntax and features. Supports C/C++ style comments (`//` line, `/* */` block) in lexer.cpp.
+- [[concepts/StdModuleSigs]] — `.at.sigs` binary signature format and `at_sigs.h` builders. Version 3 TLV format; reader/writer fixed for type deduplication and class method resolution.
 
 ## Entities (components)
 

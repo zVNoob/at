@@ -298,16 +298,15 @@ y : \`0\` = x + 1;
         }
     } else {
         at::Interpreter interp;
-        at::Value result = interp.run(ast);
-        std::cout << "Interpreter result: ";
-        if (result.kind == at::Value::Kind::Int) std::cout << "int:" << result.intValue.toString();
-        else if (result.kind == at::Value::Kind::Decimal) std::cout << "dec:" << result.decimalValue;
-        else if (result.kind == at::Value::Kind::String) std::cout << "str:" << result.stringValue;
-        else if (result.kind == at::Value::Kind::Bool) std::cout << "bool:" << (result.boolValue ? "true" : "false");
-        else if (result.kind == at::Value::Kind::Object) std::cout << "obj:" << result.objectValue->size();
-        else if (result.kind == at::Value::Kind::Function) std::cout << "fn";
-        else std::cout << "null/void";
-        std::cout << "\n";
+        if (!interp.jitModule(ast, sem, true)) {
+            std::cerr << "interpreter: JIT compilation failed\n";
+            return 1;
+        }
+        int64_t result = interp.callJitSymbol("main");
+        at::Value v;
+        v.kind = at::Value::Kind::Int;
+        v.intValue = result;
+        std::cout << "Interpreter result: int:" << result << "\n";
     }
     return 0;
 }

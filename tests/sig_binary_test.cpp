@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <iostream>
+#include <memory>
 #include <string>
 
 int main() {
@@ -13,8 +14,8 @@ int main() {
     BinSigDecl fn;
     fn.kind = BinSigDecl::Fn;
     fn.name = "add";
-    fn.params.push_back({"a", BinSigType::prim(BinSigType::PInt)});
-    fn.params.push_back({"b", BinSigType::prim(BinSigType::PInt)});
+    fn.params.push_back({"a", std::make_shared<BinSigType>(BinSigType::prim(BinSigType::PInt))});
+    fn.params.push_back({"b", std::make_shared<BinSigType>(BinSigType::prim(BinSigType::PInt))});
     fn.returnType = BinSigType::prim(BinSigType::PInt);
     decls.push_back(fn);
 
@@ -23,7 +24,7 @@ int main() {
     meta.kind = BinSigDecl::Meta;
     meta.name = "identity";
     meta.templateParams = {"T"};
-    meta.params.push_back({"x", BinSigType::named("T")});
+    meta.params.push_back({"x", std::make_shared<BinSigType>(BinSigType::named("T"))});
     meta.returnType = BinSigType::named("T");
     decls.push_back(meta);
 

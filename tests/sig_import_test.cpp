@@ -63,7 +63,7 @@ int main() {
     assert(id && id->kind == at::BinSigDecl::Meta);
     assert(id->templateParams.size() == 1 && id->templateParams[0] == "T");
     assert(id->params.size() == 1 && id->params[0].first == "x");
-    assert(id->params[0].second.tag == at::BinSigType::Named && id->params[0].second.name == "T");
+    assert(id->params[0].second->tag == at::BinSigType::Named && id->params[0].second->name == "T");
 
     const at::BinSigDecl* p = findSig(imp, "P");
     assert(p && p->kind == at::BinSigDecl::Class);
@@ -101,7 +101,7 @@ int main() {
     assert(io.importObjectFile("std_modules/io.o") > 0);
     const at::BinSigDecl* fopen = findSig(io, "at_fopen");
     assert(fopen && fopen->params.size() == 2);
-    assert(fopen->params[0].second.primKind == at::BinSigType::PString);
+    assert(fopen->params[0].second->primKind == at::BinSigType::PString);
     auto natives = io.allSymbols();
     assert(errorsFor("at_strlen(\"abc\");\n", natives) == 0);
     assert(errorsFor("at_strlen(1);\n", natives) == 1);       // expected string

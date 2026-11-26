@@ -89,8 +89,28 @@ std::vector<Token> Lexer::tokenize() {
 }
 
 void Lexer::skipWhitespace() {
-    while (pos_ < source_.size() && isSpace(static_cast<unsigned char>(source_[pos_]))) {
-        advanceOne();
+    while (pos_ < source_.size()) {
+        while (pos_ < source_.size() && isSpace(static_cast<unsigned char>(source_[pos_]))) {
+            advanceOne();
+        }
+        if (pos_ + 1 < source_.size() && source_[pos_] == '/') {
+            if (source_[pos_ + 1] == '/') {
+                while (pos_ < source_.size() && source_[pos_] != '\n') {
+                    advanceOne();
+                }
+                continue;
+            } else if (source_[pos_ + 1] == '*') {
+                pos_ += 2;
+                while (pos_ + 1 < source_.size() && !(source_[pos_] == '*' && source_[pos_ + 1] == '/')) {
+                    advanceOne();
+                }
+                if (pos_ + 1 < source_.size()) {
+                    pos_ += 2;
+                }
+                continue;
+            }
+        }
+        break;
     }
 }
 
