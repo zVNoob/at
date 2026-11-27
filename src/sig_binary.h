@@ -38,16 +38,16 @@ namespace at {
 // Type payload encodings:
 //   PRIM:   uint8 prim_kind                          (ATSG_P_*)
 //   NAMED:  uint32 name_off
-//   FUNC:   uint8 param_count
-//           param_count × uint16 type_idx
-//           uint16 ret_type_idx
-//   CLASS:  uint32 size
+//           uint32 size
 //           uint32 alignment
 //           uint32 parent_count
 //           parent_count × uint32 parent_id
 //           parent_count × uint32 parent_offset
 //           uint32 field_count
 //           field_count × (uint32 name_off + uint16 type_idx + uint32 offset + uint8 flags)
+//   FUNC:   uint8 param_count
+//           param_count × uint16 type_idx
+//           uint16 ret_type_idx
 //   PTR/REF/ARRAY: uint16 elem_type_idx
 //   TMPL:   uint8 arg_count
 //           arg_count × uint16 type_idx
@@ -118,7 +118,6 @@ public:
 
 private:
     std::vector<uint8_t> buf_;
-    std::vector<std::string> strings_;
     std::map<const BinSigType*, uint16_t> typeIndex_;
     std::map<std::string, const BinSigType*> canonicalTypes_;
 
@@ -141,30 +140,7 @@ private:
 };
 
 // Conversion to the human-readable text format (for debugging / dumps).
-struct SigType {
-    enum class Kind { Primitive, Class, Function, Array, Pointer, Reference };
-    Kind kind = Kind::Primitive;
-    std::string name;
-    std::vector<SigType> params;
-    std::shared_ptr<SigType> returnType;
-};
-
-struct SigDecl {
-    enum class Kind { Fn, Class, Alias, Meta };
-    Kind kind = Kind::Fn;
-    std::string name;
-    std::vector<std::string> templateParams;
-    uint8_t flags = 0;
-    std::vector<std::pair<std::string, SigType>> params;
-    std::shared_ptr<SigType> returnType;
-    std::vector<std::string> bases;
-    std::vector<std::pair<std::string, SigType>> fields;
-    std::vector<SigDecl> methods;
-    std::shared_ptr<SigType> aliasTarget;
-};
-
-SigType binTypeToText(const BinSigType& t);
-SigDecl binDeclToText(const BinSigDecl& d);
+// Uses SigType/SigDecl from sig_format.h.
 std::string binDeclToString(const BinSigDecl& d);
 
 } // namespace at

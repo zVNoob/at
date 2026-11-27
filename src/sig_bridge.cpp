@@ -114,18 +114,10 @@ bool symbolToBinSigDecl(const SymbolPtr& sym, BinSigDecl& out) {
     auto ct = std::dynamic_pointer_cast<ClassType>(sym->type);
     if (ct && (ct->name == "class" || ct->name == "template")) {
         // Anonymous class expression bound to a name: a class declaration.
+        // The class layout (parents, fields, offsets) is emitted separately
+        // as a BinSigType::Named entry with typeIdx referencing it.
         out.kind = BinSigDecl::Class;
-        if (ct->scope) {
-            auto* scope = static_cast<SymbolTable*>(ct->scope);
-            for (const auto& m : scope->exportedSymbols()) {
-                BinSigDecl md;
-                if (m->type && std::dynamic_pointer_cast<FunctionType>(m->type) && symbolToBinSigDecl(m, md)) {
-                    out.methods.push_back(md);
-                } else {
-                    out.fields.push_back({m->name, typeToBinSig(m->type)});
-                }
-            }
-        }
+        out.typeIdx = 0; // placeholder; set by codegen when building type table
         return true;
     }
 

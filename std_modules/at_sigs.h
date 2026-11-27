@@ -58,21 +58,30 @@ struct ATSigType {
     uint32_t alignment;        /* alignment requirement */
     uint32_t parent_count;     /* number of base types */
     uint32_t parent_ids[ATSG_MAX_BASES];        /* base type indices */
-    uint32_t parent_offsets[ATSG_MAX_BASES];    /* byte offset of each parent */
+    uint32_t parent_offsets[ATSG_MAX_BASES];  /* byte offset of each parent */
     uint32_t field_count;      /* number of fields (data + methods) */
     uint32_t field_name_off[ATSG_MAX_FIELDS];   /* string offsets */
     uint16_t field_type_idx[ATSG_MAX_FIELDS];   /* type table indices */
     uint32_t field_offset[ATSG_MAX_FIELDS];     /* byte offset within object */
     uint8_t  field_flags[ATSG_MAX_FIELDS];      /* const/! + visibility */
+
+    /* For Func / Tmpl */
+    uint8_t  param_count;      /* number of parameters (Func) or args (Tmpl) */
+    uint16_t ret_type_idx;     /* return type index (Func) */
+    uint16_t param_type_idx[ATSG_MAX_PARAMS];  /* parameter type indices */
+    uint8_t  tmpl_arg_count;   /* template arg count (Tmpl) */
+    uint16_t tmpl_arg_type_idx[ATSG_MAX_TMPL];  /* template arg type indices */
+
+    /* For Ptr / Ref / Array */
+    uint16_t elem_type_idx;    /* element type index */
 };
 
 /*
  * Decl table entry.  Describes a top-level declaration (function, class,
  * alias, meta/template function).
  *
- * Fn/Meta entries describe function signatures.  Class entries are now just
- * type references (the class layout lives in the type table); this decl
- * exists so classes can be imported by name.
+ * Fn/Meta entries describe function signatures.  Class entries reference
+ * a type table entry for layout (typeIdx).
  */
 struct ATSigDecl {
     uint8_t  kind;               /* ATSG_KIND_* */
@@ -87,10 +96,13 @@ struct ATSigDecl {
     uint16_t param_type_idx[ATSG_MAX_PARAMS];   /* type table indices */
     uint16_t ret_type_idx;       /* type table index for return type */
 
+    /* For Class: index into type table for layout */
+    uint16_t typeIdx;            /* type table index */
+
     /* Alias field */
     uint16_t target_type_idx;    /* type table index */
 
-    uint8_t  pad[22];
+    uint8_t  pad[18];
 };
 
 constexpr uint32_t at_sigs_str(uint32_t i) noexcept { return i; }
@@ -107,7 +119,7 @@ constexpr ATSigType at_sigs_type_func(uint16_t ret_idx, Params... params) noexce
     ATSigType t{}; t.tag = ATSG_T_FUNC; t.ret_type_idx = ret_idx;
     uint16_t arr[] = { static_cast<uint16_t>(params)... };
     t.param_count = static_cast<uint8_t>(sizeof...(Params));
-    for (size_t i = 0; i < sizeof...(Params) && i < 255; ++i) t.param_type_idx[i] = arr[i];
+    for (size_t i = 0; i < sizeof...(Params) && i < ATSG_MAX_PARAMS; ++i) t.param_type_idx[i] = arr[i];
     return t;
 }
 constexpr ATSigType at_sigs_type_ptr(uint16_t elem_idx) noexcept {
@@ -123,39 +135,7 @@ constexpr ATSigType at_sigs_type_tmpl(uint16_t name_off, auto&&... type_indices)
     ATSigType t{}; t.tag = ATSG_T_TMPL; t.name_off = name_off;
     uint16_t arr[] = { static_cast<uint16_t>(type_indices)... };
     t.tmpl_arg_count = static_cast<uint8_t>(sizeof...(type_indices));
-    for (size_t i = 0; i < sizeof...(type_indices) && i < 255; ++i) t.tmpl_arg_type_idx[i] = arr[i];
-    return t;
-}
-
-/* Build a class type entry with parent layout and fields */
-constexpr ATSigType at_sigs_type_class(uint32_t name_off,
-                                        uint32_t size,
-                                        uint32_t alignment,
-                                        uint32_t parent_count,
-                                        const uint32_t* parent_ids,
-                                        const uint32_t* parent_offsets,
-                                        uint32_t field_count,
-                                        const uint32_t* field_name_offs,
-                                        const uint16_t* field_type_idxs,
-                                        const uint32_t* field_offsets,
-                                        const uint8_t* field_flags) noexcept {
-    ATSigType t{};
-    t.tag = ATSG_T_NAMED;
-    t.name_off = name_off;
-    t.size = size;
-    t.alignment = alignment;
-    t.parent_count = parent_count;
-    for (uint32_t i = 0; i < parent_count && i < ATSG_MAX_BASES; ++i) {
-        t.parent_ids[i] = parent_ids[i];
-        t.parent_offsets[i] = parent_offsets[i];
-    }
-    t.field_count = field_count;
-    for (uint32_t i = 0; i < field_count && i < ATSG_MAX_FIELDS; ++i) {
-        t.field_name_off[i] = field_name_offs[i];
-        t.field_type_idx[i] = field_type_idxs[i];
-        t.field_offset[i] = field_offsets[i];
-        t.field_flags[i] = field_flags[i];
-    }
+    for (size_t i = 0; i < sizeof...(type_indices) && i < ATSG_MAX_TMPL; ++i) t.tmpl_arg_type_idx[i] = arr[i];
     return t;
 }
 
@@ -164,7 +144,7 @@ constexpr ATSigDecl at_sigs_fn(uint32_t name_off, uint16_t ret_idx, auto&&... ty
     d.ret_type_idx = ret_idx;
     uint16_t arr[] = { static_cast<uint16_t>(type_indices)... };
     d.param_count = static_cast<uint8_t>(sizeof...(type_indices));
-    for (size_t i = 0; i < sizeof...(type_indices) && i < 255; ++i) d.param_type_idx[i] = arr[i];
+    for (size_t i = 0; i < sizeof...(type_indices) && i < ATSG_MAX_PARAMS; ++i) d.param_type_idx[i] = arr[i];
     return d;
 }
 
@@ -173,7 +153,7 @@ constexpr ATSigDecl at_sigs_meta(uint32_t name_off, uint16_t ret_idx, auto&&... 
     d.ret_type_idx = ret_idx;
     uint16_t arr[] = { static_cast<uint16_t>(type_indices)... };
     d.param_count = static_cast<uint8_t>(sizeof...(type_indices));
-    for (size_t i = 0; i < sizeof...(type_indices) && i < 255; ++i) d.param_type_idx[i] = arr[i];
+    for (size_t i = 0; i < sizeof...(type_indices) && i < ATSG_MAX_PARAMS; ++i) d.param_type_idx[i] = arr[i];
     return d;
 }
 
