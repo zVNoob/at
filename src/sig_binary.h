@@ -114,19 +114,21 @@ struct BinSigDecl {
 // Binary writer for version 4 TLV format
 class BinSigWriter {
 public:
-    std::vector<uint8_t> write(const std::vector<BinSigDecl>& decls);
+    std::vector<uint8_t> write(const std::vector<BinSigDecl>& decls,
+                               const std::vector<BinSigType>& types = {});
 
 private:
     std::vector<uint8_t> buf_;
     std::map<const BinSigType*, uint16_t> typeIndex_;
     std::map<std::string, const BinSigType*> canonicalTypes_;
+    const std::vector<BinSigType>* extraTypes_ = nullptr;
 
     void writeU8(uint8_t v) { buf_.push_back(v); }
     void writeU16(uint16_t v) { buf_.push_back(v & 0xFF); buf_.push_back((v >> 8) & 0xFF); }
     void writeU32(uint32_t v) { for (int i=0;i<4;i++) buf_.push_back((v>>(i*8))&0xFF); }
     uint32_t writeStr(const std::string& s);
     void writeType(const BinSigType& t);
-    void writeDecl(const BinSigDecl& d, uint16_t typeIdx);
+    void writeDecl(const BinSigDecl& d);
 };
 
 // Binary reader for version 4 TLV format

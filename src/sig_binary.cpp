@@ -60,7 +60,7 @@ void BinSigWriter::writeType(const BinSigType& t) {
     }
 }
 
-void BinSigWriter::writeDecl(const BinSigDecl& d, uint16_t typeIdx) {
+void BinSigWriter::writeDecl(const BinSigDecl& d) {
     switch (d.kind) {
         case BinSigDecl::Fn:
         case BinSigDecl::Meta: {
@@ -76,7 +76,12 @@ void BinSigWriter::writeDecl(const BinSigDecl& d, uint16_t typeIdx) {
             break;
         }
         case BinSigDecl::Class: {
-            writeU16(d.typeIdx);
+            // Look up the class type index from extraTypes_
+            if (extraTypes_ && d.typeIdx < extraTypes_->size()) {
+                writeU16(typeIndex_[&(*extraTypes_)[d.typeIdx]]);
+            } else {
+                writeU16(0);
+            }
             break;
         }
         case BinSigDecl::Alias: {
@@ -86,12 +91,14 @@ void BinSigWriter::writeDecl(const BinSigDecl& d, uint16_t typeIdx) {
     }
 }
 
-std::vector<uint8_t> BinSigWriter::write(const std::vector<BinSigDecl>& decls) {
+std::vector<uint8_t> BinSigWriter::write(const std::vector<BinSigDecl>& decls,
+                                          const std::vector<BinSigType>& extraTypes) {
     buf_.clear();
     typeIndex_.clear();
     canonicalTypes_.clear();
+    extraTypes_ = &extraTypes;
 
-    // Collect all unique types from all decls
+    // Collect all unique types from all decls AND extra types
     std::function<void(const BinSigType&)> collectTypes = [&](const BinSigType& t) {
         if (typeIndex_.count(&t)) return;
         uint16_t idx = (uint16_t)typeIndex_.size();
@@ -113,6 +120,8 @@ std::vector<uint8_t> BinSigWriter::write(const std::vector<BinSigDecl>& decls) {
             default: break;
         }
     };
+
+    for (const auto& t : extraTypes) collectTypes(t);
 
     for (const auto& d : decls) {
         switch (d.kind) {
@@ -178,7 +187,12 @@ std::vector<uint8_t> BinSigWriter::write(const std::vector<BinSigDecl>& decls) {
                 break;
             }
             case BinSigDecl::Class: {
-                writeU16(d.typeIdx);
+                // Look up the class type index from extraTypes_
+                if (extraTypes_ && d.typeIdx < extraTypes_->size()) {
+                    writeU16(typeIndex_[&(*extraTypes_)[d.typeIdx]]);
+                } else {
+                    writeU16(0);
+                }
                 break;
             }
             case BinSigDecl::Alias: {
