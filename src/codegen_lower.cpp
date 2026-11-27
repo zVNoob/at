@@ -234,11 +234,73 @@ std::unique_ptr<LoweredResult> CodeGenLower::lower(const AstPtr& root,
 
     if (savedBB) builder_.SetInsertPoint(savedBB);
 
-    // Emit .at.sigs section
+    // Emit .at.sigs section with class layout types
     {
-        std::vector<BinSigDecl> decls = sigs_;
-        if (!decls.empty()) {
-            std::vector<uint8_t> bytes = BinSigWriter().write(decls);
+        // Build class layout type entries for the type table
+        std::vector<BinSigType> classTypes;
+        std::map<std::string, uint16_t> classNameToTypeIdx;
+
+        for (const auto& kv : classStructTypes_) {
+            const std::string& className = kv.first;
+            const auto& fieldNamesIt = classFieldNames_.find(className);
+            std::vector<std::string> fieldNames;
+            if (fieldNamesIt != classFieldNames_.end()) {
+                fieldNames = fieldNamesIt->second;
+            }
+
+            BinSigType bt;
+            bt.tag = BinSigType::Named;
+            bt.name = className;
+            bt.size = (uint32_t)(fieldNames.size() * 8);
+            bt.alignment = 8;
+            bt.parent_count = 0;
+            bt.field_count = (uint32_t)fieldNames.size();
+            for (size_t i = 0; i < fieldNames.size(); ++i) {
+                BinSigType::Field f;
+                f.name = fieldNames[i];
+                f.type_idx = 0; // i64 = Prim(PInt) - will be resolved below
+                f.offset = (uint32_t)(i * 8);
+                f.flags = ATSG_FLAG_PUBLIC; // public by default
+                bt.fields.push_back(f);
+            }
+            classTypes.push_back(bt);
+            classNameToTypeIdx[className] = (uint16_t)(classTypes.size() - 1);
+        }
+
+        // Resolve field type indices: i64 fields point to Prim(PInt) type
+        // Find or create Prim(PInt) type in classTypes
+        uint16_t intTypeIdx = 0;
+        bool intTypeFound = false;
+        for (size_t i = 0; i < classTypes.size(); ++i) {
+            if (classTypes[i].tag == BinSigType::Prim && classTypes[i].primKind == BinSigType::PInt) {
+                intTypeIdx = (uint16_t)i;
+                intTypeFound = true;
+                break;
+            }
+        }
+        if (!intTypeFound) {
+            BinSigType intType = BinSigType::prim(BinSigType::PInt);
+            intTypeIdx = (uint16_t)classTypes.size();
+            classTypes.push_back(intType);
+        }
+        for (auto& ct : classTypes) {
+            for (auto& f : ct.fields) {
+                f.type_idx = intTypeIdx;
+            }
+        }
+
+        // Set typeIdx for class decls
+        for (auto& d : sigs_) {
+            if (d.kind == BinSigDecl::Class) {
+                auto it = classNameToTypeIdx.find(d.name);
+                if (it != classNameToTypeIdx.end()) {
+                    d.typeIdx = it->second;
+                }
+            }
+        }
+
+        if (!sigs_.empty() || !classTypes.empty()) {
+            std::vector<uint8_t> bytes = BinSigWriter().write(sigs_, classTypes);
             auto* init = llvm::ConstantDataArray::get(context_, llvm::ArrayRef<uint8_t>(bytes));
             auto* gv = new llvm::GlobalVariable(*module_, init->getType(), true,
                 llvm::GlobalValue::PrivateLinkage, init, "__at_sigs");
