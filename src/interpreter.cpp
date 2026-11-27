@@ -116,6 +116,109 @@ Interpreter::Interpreter()
         g_nativeFns = new std::map<std::string, NativeFn>();
     }
 
+    // Register I/O native functions
+    registerNative("at_fopen", [](const std::vector<Value>& args) -> Value {
+        if (args.size() < 2) return Value{};
+        std::string path = (args[0].kind == Value::Kind::String) ? args[0].stringValue : "";
+        int mode = (args[1].kind == Value::Kind::Int) ? (int)args[1].intValue.toInt64() : 0;
+        FILE* f = at_fopen(path.c_str(), mode);
+        Value v; v.kind = Value::Kind::Int; v.intValue = (long long)(size_t)f; return v;
+    });
+    registerNative("at_fclose", [](const std::vector<Value>& args) -> Value {
+        if (args.empty()) return Value{};
+        FILE* f = (FILE*)(size_t)args[0].intValue.toInt64();
+        int r = at_fclose(f);
+        Value v; v.kind = Value::Kind::Int; v.intValue = r; return v;
+    });
+    registerNative("at_fread", [](const std::vector<Value>& args) -> Value {
+        if (args.size() < 2) return Value{};
+        FILE* f = (FILE*)(size_t)args[0].intValue.toInt64();
+        int size = (args[1].kind == Value::Kind::Int) ? (int)args[1].intValue.toInt64() : 1024;
+        if (size <= 0) size = 1024;
+        std::string buf(size, '\0');
+        size_t n = at_fread4(&buf[0], 1, size, f);
+        buf.resize(n);
+        Value v; v.kind = Value::Kind::String; v.stringValue = buf; return v;
+    });
+    registerNative("at_fwrite", [](const std::vector<Value>& args) -> Value {
+        if (args.size() < 2) return Value{};
+        FILE* f = (FILE*)(size_t)args[0].intValue.toInt64();
+        std::string s = (args[1].kind == Value::Kind::String) ? args[1].stringValue : "";
+        size_t n = at_fwrite4(s.c_str(), 1, s.size(), f);
+        fflush(f);
+        Value v; v.kind = Value::Kind::Int; v.intValue = (long long)n; return v;
+    });
+    registerNative("at_feof", [](const std::vector<Value>& args) -> Value {
+        if (args.empty()) return Value{};
+        FILE* f = (FILE*)(size_t)args[0].intValue.toInt64();
+        int r = at_feof(f);
+        Value v; v.kind = Value::Kind::Bool; v.boolValue = (r != 0); return v;
+    });
+    registerNative("at_fflush", [](const std::vector<Value>& args) -> Value {
+        if (args.empty()) return Value{};
+        FILE* f = (FILE*)(size_t)args[0].intValue.toInt64();
+        int r = at_fflush(f);
+        Value v; v.kind = Value::Kind::Int; v.intValue = r; return v;
+    });
+    registerNative("at_ftell", [](const std::vector<Value>& args) -> Value {
+        if (args.empty()) return Value{};
+        FILE* f = (FILE*)(size_t)args[0].intValue.toInt64();
+        long r = at_ftell(f);
+        Value v; v.kind = Value::Kind::Int; v.intValue = r; return v;
+    });
+    registerNative("at_fseek", [](const std::vector<Value>& args) -> Value {
+        if (args.size() < 3) return Value{};
+        FILE* f = (FILE*)(size_t)args[0].intValue.toInt64();
+        long offset = (args[1].kind == Value::Kind::Int) ? args[1].intValue.toInt64() : 0;
+        int whence = (args[2].kind == Value::Kind::Int) ? (int)args[2].intValue.toInt64() : 0;
+        int r = at_fseek(f, offset, whence);
+        Value v; v.kind = Value::Kind::Int; v.intValue = r; return v;
+    });
+    registerNative("at_fgets", [](const std::vector<Value>& args) -> Value {
+        if (args.size() < 2) return Value{};
+        FILE* f = (FILE*)(size_t)args[0].intValue.toInt64();
+        int size = (args[1].kind == Value::Kind::Int) ? (int)args[1].intValue.toInt64() : 256;
+        if (size <= 0) size = 256;
+        std::string buf(size, '\0');
+        char* r = at_fgets(&buf[0], size, f);
+        if (!r) { Value v; v.kind = Value::Kind::Null; return v; }
+        buf.resize(strlen(buf.c_str()));
+        Value v; v.kind = Value::Kind::String; v.stringValue = buf; return v;
+    });
+    registerNative("at_fputs", [](const std::vector<Value>& args) -> Value {
+        if (args.size() < 2) return Value{};
+        FILE* f = (FILE*)(size_t)args[1].intValue.toInt64();
+        std::string s = (args[0].kind == Value::Kind::String) ? args[0].stringValue : "";
+        int r = at_fputs(s.c_str(), f);
+        Value v; v.kind = Value::Kind::Int; v.intValue = r; return v;
+    });
+    registerNative("at_fputc", [](const std::vector<Value>& args) -> Value {
+        if (args.size() < 2) return Value{};
+        FILE* f = (FILE*)(size_t)args[1].intValue.toInt64();
+        int c = (args[0].kind == Value::Kind::Int) ? (int)args[0].intValue.toInt64() : 0;
+        int r = at_fputc(c, f);
+        Value v; v.kind = Value::Kind::Int; v.intValue = r; return v;
+    });
+    registerNative("at_fgetc", [](const std::vector<Value>& args) -> Value {
+        if (args.empty()) return Value{};
+        FILE* f = (FILE*)(size_t)args[0].intValue.toInt64();
+        int r = at_fgetc(f);
+        Value v; v.kind = Value::Kind::Int; v.intValue = r; return v;
+    });
+    registerNative("at_stdin", [](const std::vector<Value>&) -> Value {
+        Value v; v.kind = Value::Kind::Int; v.intValue = (long long)(size_t)at_stdin(); return v;
+    });
+    registerNative("at_stdout", [](const std::vector<Value>&) -> Value {
+        Value v; v.kind = Value::Kind::Int; v.intValue = (long long)(size_t)at_stdout(); return v;
+    });
+    registerNative("at_stderr", [](const std::vector<Value>&) -> Value {
+        Value v; v.kind = Value::Kind::Int; v.intValue = (long long)(size_t)at_stderr(); return v;
+    });
+    registerNative("at_strlen", [](const std::vector<Value>& args) -> Value {
+        if (args.empty() || args[0].kind != Value::Kind::String) return Value{};
+        Value v; v.kind = Value::Kind::Int; v.intValue = (long long)at_strlen(args[0].stringValue.c_str()); return v;
+    });
+
     llvm::InitializeNativeTarget();
     llvm::InitializeNativeTargetAsmPrinter();
 }
@@ -302,7 +405,114 @@ Value Interpreter::evalTree(const AstPtr& node) {
         return v;
     }
     if (node->kind == "IDENTIFIER") {
-        return current_->get(node->text);
+        Value v = current_->get(node->text);
+        if (node->text == "stdout" || node->text == "io") {
+        }
+        return v;
+    }
+    if (node->kind == "IMPORT") {
+        std::string path = node->text;
+        if (path.size() >= 2 && (path.front() == '\'' || path.front() == '"')) {
+            path = path.substr(1, path.size() - 2);
+        }
+        return loadModuleFFI(path);
+    }
+    // Member access: obj.method
+    if (node->kind == "expr" && !node->children.empty()) {
+        bool hasDot = false;
+        for (const auto& c : node->children) {
+            if (c && c->text == ".") { hasDot = true; break; }
+        }
+        if (hasDot && node->children.size() >= 3) {
+            Value obj = evalTree(node->children[0]);
+            if (obj.kind == Value::Kind::Object && obj.objectValue) {
+                for (const auto& [k, v] : *obj.objectValue) {
+                }
+                for (const auto& [k, v] : *obj.objectValue) {
+                }
+                for (size_t i = 1; i < node->children.size(); ++i) {
+                    if (node->children[i] && node->children[i]->kind == "IDENTIFIER") {
+                        auto it = obj.objectValue->find(node->children[i]->text);
+                        if (it != obj.objectValue->end()) {
+                            return it->second;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    // Anonymous template / function expression: @ (params) { body }
+    if (node->kind == "expr" && !node->children.empty() &&
+        node->children[0] && node->children[0]->text == "@") {
+        auto fn = std::make_shared<FunctionValue>();
+        // Find params: func_arg_declare_list child
+        for (const auto& c : node->children) {
+            if (c && c->kind == "func_arg_declare_list") {
+                for (const auto& p : c->children) {
+                    if (p && p->kind == "func_arg_declare" && !p->children.empty() &&
+                        p->children[0]->kind == "IDENTIFIER") {
+                        fn->params.push_back(p->children[0]->text);
+                    }
+                }
+            }
+            if (c && c->kind == "scope") {
+                fn->body = c;
+            }
+        }
+        fn->closure = current_;
+        Value v; v.kind = Value::Kind::Function; v.functionValue = fn;
+        return v;
+    }
+    // Object construction: ClassName <{ args }>
+    if (node->kind == "expr" && !node->children.empty() &&
+        node->children[0] && node->children[0]->kind == "IDENTIFIER" &&
+        node->children.size() >= 4 &&
+        node->children[1] && node->children[1]->text == "<{" &&
+        node->children[2] && node->children[2]->kind == "expr_list" &&
+        node->children[3] && node->children[3]->text == "}>") {
+        std::string className = node->children[0]->text;
+        Value cls = current_->get(className);
+        if (cls.kind == Value::Kind::Function && cls.functionValue) {
+            // Create new object
+            auto obj = std::shared_ptr<std::map<std::string, Value>>(
+                new std::map<std::string, Value>(), ObjectDeleter());
+            Value objVal; objVal.kind = Value::Kind::Object; objVal.objectValue = obj;
+
+            // Collect constructor args from expr_list
+            std::vector<Value> args;
+            for (const auto& a : node->children[2]->children) {
+                if (a && a->kind == "expr") args.push_back(evalTree(a));
+            }
+
+            // Execute constructor body in a scope with self = object
+            auto fn = cls.functionValue;
+            auto newScope = std::make_shared<Environment>();
+            newScope->parent = fn->closure ? fn->closure : globals_;
+            newScope->define("self", objVal);
+            for (size_t i = 0; i < fn->params.size() && i < args.size(); ++i) {
+                newScope->define(fn->params[i], args[i]);
+            }
+            EnvironmentPtr prev = current_;
+            current_ = newScope;
+            try {
+                if (fn->body) execTree(fn->body);
+            } catch (const ReturnSignal& rs) {
+                objVal = rs.value;
+            }
+            current_ = prev;
+
+            // Copy constructor scope vars (except "self") into the object map
+            // so member access (obj.field) can find them
+            if (objVal.kind == Value::Kind::Object && objVal.objectValue) {
+                for (const auto& [name, val] : newScope->vars) {
+                    if (name != "self") {
+                        (*objVal.objectValue)[name] = val;
+                    }
+                }
+            }
+
+            return objVal;
+        }
     }
     // Binary ops
     if (node->children.size() == 3 && node->children[1]) {
@@ -392,21 +602,172 @@ void Interpreter::execTree(const AstPtr& node) {
     if (node->children.empty()) return;
     const AstPtr& first = node->children[0];
     
-    // Assignment: IDENTIFIER = expr
-    if (node->children.size() == 3 && node->children[1] && node->children[1]->kind == "CHAR(61)") {
-        std::string varName;
-        if (node->children[0] && node->children[0]->kind == "expr" &&
-            node->children[0]->children.size() >= 1 &&
-            node->children[0]->children[0] && node->children[0]->children[0]->kind == "IDENTIFIER") {
-            varName = node->children[0]->children[0]->text;
-        } else if (node->children[0] && node->children[0]->kind == "IDENTIFIER") {
-            varName = node->children[0]->text;
-        }
-        if (!varName.empty()) {
-            Value v = evalTree(node->children[2]);
-            current_->set(varName, v);
+    // Class definition: IDENTIFIER := # (params) { body }
+    if (node->children.size() >= 3 &&
+        node->children[0] && node->children[0]->kind == "IDENTIFIER" &&
+        node->children[1] && node->children[1]->kind == "ALIAS_PUBLIC") {
+        std::string className = node->children[0]->text;
+        // Find the class node inside child[2] (type > base_type > complex_type > class)
+        AstPtr classNode = nullptr;
+        std::function<void(const AstPtr&)> findClass = [&](const AstPtr& n) {
+            if (!n || classNode) return;
+            if (n->kind == "class") { classNode = n; return; }
+            for (const auto& c : n->children) findClass(c);
+        };
+        if (node->children[2]) findClass(node->children[2]);
+        if (classNode) {
+            auto fn = std::make_shared<FunctionValue>();
+            // Extract constructor params from func_arg_declare_list
+            for (const auto& c : classNode->children) {
+                if (c && c->kind == "func_arg_declare_list") {
+                    for (const auto& p : c->children) {
+                        if (p && p->kind == "func_arg_declare" && !p->children.empty() &&
+                            p->children[0]->kind == "IDENTIFIER") {
+                            fn->params.push_back(p->children[0]->text);
+                        }
+                    }
+                }
+                if (c && c->kind == "scope") fn->body = c;
+            }
+            fn->closure = current_;
+            fn->hasSelf = true;
+            Value v; v.kind = Value::Kind::Function; v.functionValue = fn;
+            current_->define(className, v);
         }
         return;
+    }
+    
+    // Assignment: IDENTIFIER = expr or obj.field = expr
+    // The '=' may be a direct child of stmt (e.g. children[1]) or nested inside an expr child
+    {
+        // Case 1: '=' is a direct child of stmt (found at any index)
+        {
+            size_t eqIdx = 0;
+            bool foundEq = false;
+            for (size_t i = 0; i < node->children.size(); ++i) {
+                if (node->children[i] && node->children[i]->kind == "CHAR(61)") {
+                    eqIdx = i;
+                    foundEq = true;
+                    break;
+                }
+            }
+            if (foundEq) {
+                const AstPtr& left = node->children[0];
+                // Check if LHS is member access: obj.field
+                if (left->kind == "expr" && !left->children.empty()) {
+                    bool hasDot = false;
+                    for (const auto& c : left->children) {
+                        if (c && c->text == ".") { hasDot = true; break; }
+                    }
+                    if (hasDot && left->children.size() >= 3) {
+                        Value obj = evalTree(left->children[0]);
+                        if (obj.kind == Value::Kind::Object && obj.objectValue) {
+                            for (size_t i = 1; i < left->children.size(); ++i) {
+                                if (left->children[i] && left->children[i]->kind == "IDENTIFIER") {
+                                    const AstPtr* rhs = nullptr;
+                                    for (size_t j = eqIdx + 1; j < node->children.size(); ++j) {
+                                        if (node->children[j] && node->children[j]->kind == "expr") {
+                                            rhs = &node->children[j];
+                                            break;
+                                        }
+                                    }
+                                    if (rhs) {
+                                        Value v = evalTree(*rhs);
+                                        (*obj.objectValue)[left->children[i]->text] = v;
+                                    }
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                }
+                // Simple variable assignment
+                std::string varName;
+                if (left->kind == "IDENTIFIER") {
+                    varName = left->text;
+                } else if (left->kind == "expr" && !left->children.empty() &&
+                           left->children[0]->kind == "IDENTIFIER") {
+                    varName = left->children[0]->text;
+                }
+                // Right side is the expr child after '='
+                const AstPtr* rhs = nullptr;
+                for (size_t i = eqIdx + 1; i < node->children.size(); ++i) {
+                    if (node->children[i] && node->children[i]->kind == "expr") {
+                        rhs = &node->children[i];
+                        break;
+                    }
+                }
+                if (!varName.empty() && rhs) {
+                    Value v = evalTree(*rhs);
+                    current_->set(varName, v);
+                }
+                return;
+            }
+        }
+
+        // Case 2: '=' is nested inside an expr child
+        const AstPtr* assignExpr = nullptr;
+        for (const auto& c : node->children) {
+            if (c && c->kind == "expr") {
+                for (size_t i = 0; i + 1 < c->children.size(); ++i) {
+                    if (c->children[i] && c->children[i]->kind == "CHAR(61)") {
+                        assignExpr = &c;
+                        break;
+                    }
+                }
+                if (assignExpr) break;
+            }
+        }
+        if (assignExpr) {
+            const AstPtr& ae = *assignExpr;
+            size_t eqIdx = 0;
+            for (size_t i = 0; i < ae->children.size(); ++i) {
+                if (ae->children[i] && ae->children[i]->kind == "CHAR(61)") {
+                    eqIdx = i;
+                    break;
+                }
+            }
+            // Left side: child before '='
+            const AstPtr& left = ae->children[eqIdx - 1];
+            // Check if LHS is member access: obj.field
+            if (left->kind == "expr" && !left->children.empty()) {
+                bool hasDot = false;
+                for (const auto& c : left->children) {
+                    if (c && c->text == ".") { hasDot = true; break; }
+                }
+                if (hasDot && left->children.size() >= 3) {
+                    Value obj = evalTree(left->children[0]);
+                    if (obj.kind == Value::Kind::Object && obj.objectValue) {
+                        // Find the field name (last IDENTIFIER child)
+                        for (size_t i = 1; i < left->children.size(); ++i) {
+                            if (left->children[i] && left->children[i]->kind == "IDENTIFIER") {
+                                if (eqIdx + 1 < ae->children.size()) {
+                                    Value v = evalTree(ae->children[eqIdx + 1]);
+                                    (*obj.objectValue)[left->children[i]->text] = v;
+                                }
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+            // Simple variable assignment
+            std::string varName;
+            if (eqIdx > 0) {
+                if (left->kind == "IDENTIFIER") {
+                    varName = left->text;
+                } else if (left->kind == "expr" && !left->children.empty() &&
+                           left->children[0]->kind == "IDENTIFIER") {
+                    varName = left->children[0]->text;
+                }
+            }
+            // Right side: child after '='
+            if (!varName.empty() && eqIdx + 1 < ae->children.size()) {
+                Value v = evalTree(ae->children[eqIdx + 1]);
+                current_->set(varName, v);
+            }
+            return;
+        }
     }
     
     // Return
@@ -478,8 +839,14 @@ void Interpreter::execTree(const AstPtr& node) {
         }
     }
     
-    // Default: exec children
-    for (const auto& c : node->children) execTree(c);
+    // Default: evaluate expression statements, recurse into others
+    for (const auto& c : node->children) {
+        if (c && c->kind == "expr") {
+            lastValue_ = evalTree(c);
+        } else {
+            execTree(c);
+        }
+    }
 }
 
 Value Interpreter::run(const AstPtr& root) {
@@ -494,28 +861,17 @@ Value Interpreter::run(const AstPtr& root) {
         return Value{};
     }
 
-    // If AST contains imports, fall back to tree-walking execution
-    // because JIT cannot easily return module objects for import expressions
-    if (hasImports(root)) {
-        lastValue_ = Value{};
-        try {
-            execTree(root);
-        } catch (const ReturnSignal& rs) {
-            return rs.value;
-        }
-        return lastValue_;
+    // Always use tree-walking execution for the interpreter.
+    // JIT path (jitModule/callJitSymbol) is still available via direct calls
+    // but does not resolve native functions at runtime, so tree-walking is used
+    // here to guarantee compiled and interpreted code behave identically.
+    lastValue_ = Value{};
+    try {
+        execTree(root);
+    } catch (const ReturnSignal& rs) {
+        return rs.value;
     }
-
-    if (!jitModule(root, sem, true)) {
-        std::cerr << "interpreter: JIT compilation failed\n";
-        return Value{};
-    }
-
-    int64_t result = callJitSymbol("main");
-    Value v;
-    v.kind = Value::Kind::Int;
-    v.intValue = result;
-    return v;
+    return lastValue_;
 }
 
 EnvironmentPtr Interpreter::makeScope(EnvironmentPtr parent) {
@@ -668,27 +1024,31 @@ Value Interpreter::loadModule(const std::string& path) {
     SemanticAnalyzer sem;
     sem.analyze(moduleAst);
 
-    size_t slash = path.find_last_of("/\\");
-    std::string modName = (slash != std::string::npos) ? path.substr(slash + 1) : path;
-    size_t dot = modName.find_last_of('.');
-    if (dot != std::string::npos) modName = modName.substr(0, dot);
-    std::string initFuncName = modName + "_init";
-
-    if (!jitModule(moduleAst, sem, false, {}, initFuncName)) {
-        std::cerr << "import: JIT failed for '" << path << "'\n";
-        return Value{};
+    // Run module in its own scope using tree-walking execution
+    auto moduleEnv = makeScope(globals_);
+    EnvironmentPtr prev = current_;
+    current_ = moduleEnv;
+    lastValue_ = Value{};
+    Value result;
+    try {
+        execTree(moduleAst);
+        result = lastValue_;
+    } catch (const ReturnSignal& r) {
+        result = r.value;
     }
+    current_ = prev;
 
-    int64_t result = callJitSymbol(initFuncName);
-
+    // Create module object with all exported variables
     auto moduleObj = std::shared_ptr<std::map<std::string, Value>>(
         new std::map<std::string, Value>(), ObjectDeleter());
-    
-    // Store __result__ from the module's init function return value
-    Value resultVal;
-    resultVal.kind = Value::Kind::Int;
-    resultVal.intValue = result;
-    (*moduleObj)["__result__"] = resultVal;
+    for (const auto& [name, val] : moduleEnv->vars) {
+        (*moduleObj)[name] = val;
+    }
+
+    // Store module init result if available
+    if (result.kind != Value::Kind::Null) {
+        (*moduleObj)["__result__"] = result;
+    }
 
     Value mod;
     mod.kind = Value::Kind::Object;
