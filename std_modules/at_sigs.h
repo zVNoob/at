@@ -11,7 +11,7 @@
 #pragma pack(push, 1)
 
 #define ATSG_MAGIC 0x47535441u
-#define ATSG_VERSION 3u
+#define ATSG_VERSION 4u
 
 #define ATSG_T_PRIM     0
 #define ATSG_T_NAMED    1
@@ -33,36 +33,64 @@
 #define ATSG_KIND_ALIAS 2
 #define ATSG_KIND_META  3
 
+#define ATSG_FLAG_CONST     1u   /* method/field is const/read-only */
+#define ATSG_FLAG_PUBLIC    2u   /* public visibility */
+#define ATSG_FLAG_PRIVATE   4u   /* private visibility */
+
+#define ATSG_MAX_BASES      8
+#define ATSG_MAX_FIELDS     32
+#define ATSG_MAX_PARAMS     16
+#define ATSG_MAX_TMPL       8
+
+/*
+ * Type table entry.  Describes a type (primitive, named, class, function
+ * pointer, etc.).  For class types, parent_ids/parent_offsets describe the
+ * inheritance chain and field_offset describes the in-memory layout.
+ *
+ * All fields and methods are stored uniformly in the field table: a method is
+ * simply a field whose type is a function pointer.
+ */
 struct ATSigType {
-    uint8_t  tag;
-    uint8_t  prim_kind;
-    uint32_t name_off;
-    uint8_t  param_count;
-    uint16_t ret_type_idx;
-    uint16_t param_type_idx[255];
-    uint16_t elem_type_idx;
-    uint8_t  tmpl_arg_count;
-    uint16_t tmpl_arg_type_idx[255];
+    uint8_t  tag;              /* ATSG_T_* */
+    uint8_t  prim_kind;        /* ATSG_P_* if Prim */
+    uint32_t name_off;         /* string table offset */
+    uint32_t size;             /* object size in bytes */
+    uint32_t alignment;        /* alignment requirement */
+    uint32_t parent_count;     /* number of base types */
+    uint32_t parent_ids[ATSG_MAX_BASES];        /* base type indices */
+    uint32_t parent_offsets[ATSG_MAX_BASES];    /* byte offset of each parent */
+    uint32_t field_count;      /* number of fields (data + methods) */
+    uint32_t field_name_off[ATSG_MAX_FIELDS];   /* string offsets */
+    uint16_t field_type_idx[ATSG_MAX_FIELDS];   /* type table indices */
+    uint32_t field_offset[ATSG_MAX_FIELDS];     /* byte offset within object */
+    uint8_t  field_flags[ATSG_MAX_FIELDS];      /* const/! + visibility */
 };
 
+/*
+ * Decl table entry.  Describes a top-level declaration (function, class,
+ * alias, meta/template function).
+ *
+ * Fn/Meta entries describe function signatures.  Class entries are now just
+ * type references (the class layout lives in the type table); this decl
+ * exists so classes can be imported by name.
+ */
 struct ATSigDecl {
-    uint8_t  kind;
-    uint32_t name_off;
-    uint8_t  tmpl_param_count;
-    uint32_t tmpl_param_name_off[255];
-    uint8_t  is_meta;
-    uint8_t  param_count;
-    uint32_t param_name_off[255];
-    uint16_t param_type_idx[255];
-    uint16_t ret_type_idx;
-    uint32_t num_bases;
-    uint32_t base_name_off[255];
-    uint32_t num_fields;
-    uint32_t field_name_off[255];
-    uint16_t field_type_idx[255];
-    uint32_t num_methods;
-    uint16_t method_decl_idx[255];
-    uint16_t target_type_idx;
+    uint8_t  kind;               /* ATSG_KIND_* */
+    uint32_t name_off;           /* string table offset */
+
+    /* Fn / Meta fields */
+    uint8_t  tmpl_param_count;   /* number of template parameters */
+    uint32_t tmpl_param_name_off[ATSG_MAX_TMPL];  /* string offsets */
+    uint8_t  flags;              /* const/! + visibility */
+    uint8_t  param_count;        /* number of parameters */
+    uint32_t param_name_off[ATSG_MAX_PARAMS];   /* string offsets */
+    uint16_t param_type_idx[ATSG_MAX_PARAMS];   /* type table indices */
+    uint16_t ret_type_idx;       /* type table index for return type */
+
+    /* Alias field */
+    uint16_t target_type_idx;    /* type table index */
+
+    uint8_t  pad[22];
 };
 
 constexpr uint32_t at_sigs_str(uint32_t i) noexcept { return i; }
@@ -99,25 +127,60 @@ constexpr ATSigType at_sigs_type_tmpl(uint16_t name_off, auto&&... type_indices)
     return t;
 }
 
+/* Build a class type entry with parent layout and fields */
+constexpr ATSigType at_sigs_type_class(uint32_t name_off,
+                                        uint32_t size,
+                                        uint32_t alignment,
+                                        uint32_t parent_count,
+                                        const uint32_t* parent_ids,
+                                        const uint32_t* parent_offsets,
+                                        uint32_t field_count,
+                                        const uint32_t* field_name_offs,
+                                        const uint16_t* field_type_idxs,
+                                        const uint32_t* field_offsets,
+                                        const uint8_t* field_flags) noexcept {
+    ATSigType t{};
+    t.tag = ATSG_T_NAMED;
+    t.name_off = name_off;
+    t.size = size;
+    t.alignment = alignment;
+    t.parent_count = parent_count;
+    for (uint32_t i = 0; i < parent_count && i < ATSG_MAX_BASES; ++i) {
+        t.parent_ids[i] = parent_ids[i];
+        t.parent_offsets[i] = parent_offsets[i];
+    }
+    t.field_count = field_count;
+    for (uint32_t i = 0; i < field_count && i < ATSG_MAX_FIELDS; ++i) {
+        t.field_name_off[i] = field_name_offs[i];
+        t.field_type_idx[i] = field_type_idxs[i];
+        t.field_offset[i] = field_offsets[i];
+        t.field_flags[i] = field_flags[i];
+    }
+    return t;
+}
+
 constexpr ATSigDecl at_sigs_fn(uint32_t name_off, uint16_t ret_idx, auto&&... type_indices) noexcept {
-    ATSigDecl d{}; d.kind = ATSG_KIND_FN; d.name_off = name_off; d.is_meta = 0;
+    ATSigDecl d{}; d.kind = ATSG_KIND_FN; d.name_off = name_off;
     d.ret_type_idx = ret_idx;
     uint16_t arr[] = { static_cast<uint16_t>(type_indices)... };
     d.param_count = static_cast<uint8_t>(sizeof...(type_indices));
     for (size_t i = 0; i < sizeof...(type_indices) && i < 255; ++i) d.param_type_idx[i] = arr[i];
     return d;
 }
+
 constexpr ATSigDecl at_sigs_meta(uint32_t name_off, uint16_t ret_idx, auto&&... type_indices) noexcept {
-    ATSigDecl d{}; d.kind = ATSG_KIND_META; d.name_off = name_off; d.is_meta = 1;
+    ATSigDecl d{}; d.kind = ATSG_KIND_META; d.name_off = name_off;
     d.ret_type_idx = ret_idx;
     uint16_t arr[] = { static_cast<uint16_t>(type_indices)... };
     d.param_count = static_cast<uint8_t>(sizeof...(type_indices));
     for (size_t i = 0; i < sizeof...(type_indices) && i < 255; ++i) d.param_type_idx[i] = arr[i];
     return d;
 }
+
 constexpr ATSigDecl at_sigs_class(uint32_t name_off) noexcept {
     ATSigDecl d{}; d.kind = ATSG_KIND_CLASS; d.name_off = name_off; return d;
 }
+
 constexpr ATSigDecl at_sigs_alias(uint32_t name_off, uint16_t target_type_idx) noexcept {
     ATSigDecl d{}; d.kind = ATSG_KIND_ALIAS; d.name_off = name_off; d.target_type_idx = target_type_idx; return d;
 }
