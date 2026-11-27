@@ -110,6 +110,7 @@ Interpreter::Interpreter()
     , jitContext_(std::make_unique<llvm::LLVMContext>())
     , lower_(std::make_unique<CodeGenLower>(*jitContext_, LowerConfig{
         .moduleName = "at_interp_module",
+        .jitMode = true,
     }))
 {
     if (!g_nativeFns) {
@@ -310,6 +311,16 @@ bool Interpreter::jitModule(const AstPtr& root, SemanticAnalyzer& sem,
     if (!ensureJit()) return false;
 
     registerNativesToJit();
+
+    // Build native function name -> index map for CodeGenLower
+    std::map<std::string, int64_t> nativeFnIndices;
+    {
+        int64_t idx = 0;
+        for (const auto& [name, fn] : *g_nativeFns) {
+            nativeFnIndices[name] = idx++;
+        }
+    }
+    lower_->setNativeFnIndices(nativeFnIndices);
 
     auto result = lower_->lower(root, sem, isMainModule, initFuncs, initFuncName);
     if (!result) {
@@ -861,17 +872,29 @@ Value Interpreter::run(const AstPtr& root) {
         return Value{};
     }
 
-    // Always use tree-walking execution for the interpreter.
-    // JIT path (jitModule/callJitSymbol) is still available via direct calls
-    // but does not resolve native functions at runtime, so tree-walking is used
-    // here to guarantee compiled and interpreted code behave identically.
-    lastValue_ = Value{};
-    try {
-        execTree(root);
-    } catch (const ReturnSignal& rs) {
-        return rs.value;
+    // If AST contains imports, fall back to tree-walking execution because
+    // JIT cannot easily return module objects for import expressions.
+    // Otherwise use JIT which now supports native functions via at_native_dispatch.
+    if (hasImports(root)) {
+        lastValue_ = Value{};
+        try {
+            execTree(root);
+        } catch (const ReturnSignal& rs) {
+            return rs.value;
+        }
+        return lastValue_;
     }
-    return lastValue_;
+
+    if (!jitModule(root, sem, true)) {
+        std::cerr << "interpreter: JIT compilation failed\n";
+        return Value{};
+    }
+
+    int64_t result = callJitSymbol("main");
+    Value v;
+    v.kind = Value::Kind::Int;
+    v.intValue = result;
+    return v;
 }
 
 EnvironmentPtr Interpreter::makeScope(EnvironmentPtr parent) {
@@ -1104,6 +1127,33 @@ Value Interpreter::loadModuleFFI(const std::string& path) {
 
             Value fn = makeNativeFFIFn(addr);
             (*moduleObj)[sym->name] = fn;
+        }
+    }
+
+    // Add .so symbols to JIT dylib so JIT-compiled code can call them directly
+    // via LLVM ORC JIT (no libffi needed). DynamicLibrarySearchGenerator only
+    // finds symbols in the main process, not dlopen'd libraries, so we define
+    // them explicitly with absolute addresses.
+    if (jitImpl_ && jitImpl_->initialized && handle) {
+        llvm::orc::JITDylib& jd = jitImpl_->jit->getMainJITDylib();
+        llvm::orc::SymbolStringPool symbolPool;
+        llvm::orc::SymbolMap symbolMap;
+        for (const auto& sym : importer.allSymbols()) {
+            if (!sym) continue;
+            if (sym->kind != SymbolKind::Function) continue;
+            void* addr = dlsym(handle, sym->name.c_str());
+            if (!addr) addr = dlsym(handle, ("_" + sym->name).c_str());
+            if (!addr) continue;
+            symbolMap[symbolPool.intern(sym->name)] =
+                llvm::orc::ExecutorSymbolDef(
+                    llvm::orc::ExecutorAddr(reinterpret_cast<uint64_t>(addr)),
+                    llvm::JITSymbolFlags(llvm::JITSymbolFlags::Exported));
+        }
+        if (!symbolMap.empty()) {
+            if (auto err = jd.define(llvm::orc::absoluteSymbols(std::move(symbolMap)))) {
+                std::cerr << "interpreter: failed to define JIT symbols: "
+                          << llvm::toString(std::move(err)) << "\n";
+            }
         }
     }
 

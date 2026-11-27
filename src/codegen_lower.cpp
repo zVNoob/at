@@ -61,6 +61,20 @@ void CodeGenLower::declareRuntimeOps() {
     llvm::FunctionType* printStrType = llvm::FunctionType::get(
         builder_.getVoidTy(), {builder_.getInt8PtrTy()}, false);
     module_->getOrInsertFunction("at_print_str", printStrType);
+
+    // In JIT mode, declare at_native_dispatch for native function calls
+    if (cfg_.jitMode) {
+        llvm::FunctionType* dispatchType = llvm::FunctionType::get(
+            builder_.getInt64Ty(),
+            {builder_.getInt64Ty(),  // fnIndex
+             builder_.getInt64Ty(),  // a0
+             builder_.getInt64Ty(),  // a1
+             builder_.getInt64Ty(),  // a2
+             builder_.getInt64Ty(),  // a3
+             builder_.getInt64Ty()}, // a4
+            false);
+        module_->getOrInsertFunction("at_native_dispatch", dispatchType);
+    }
 }
 
 void CodeGenLower::pushScope() {
@@ -470,6 +484,34 @@ llvm::Value* CodeGenLower::lowerExpr(const AstPtr& node) {
             if (auto it = namedValues_.find(calleeName); it != namedValues_.end()) {
                 if (auto* fn = llvm::dyn_cast<llvm::Function>(it->second)) {
                     return builder_.CreateCall(fn, args, "call");
+                }
+            }
+            // In JIT mode, call native functions via at_native_dispatch trampoline
+            if (cfg_.jitMode) {
+                auto it = cfg_.nativeFnIndices.find(calleeName);
+                if (it != cfg_.nativeFnIndices.end()) {
+                    int64_t fnIndex = it->second;
+                    std::vector<llvm::Value*> dispatchArgs;
+                    dispatchArgs.push_back(builder_.getInt64(fnIndex));
+                    // Pad args to 5 (a0..a4), zero-extend each to i64
+                    for (size_t i = 0; i < 5; ++i) {
+                        if (i < args.size()) {
+                            dispatchArgs.push_back(args[i]);
+                        } else {
+                            dispatchArgs.push_back(builder_.getInt64(0));
+                        }
+                    }
+                    llvm::FunctionType* dispatchType = llvm::FunctionType::get(
+                        builder_.getInt64Ty(),
+                        {builder_.getInt64Ty(), builder_.getInt64Ty(), builder_.getInt64Ty(),
+                         builder_.getInt64Ty(), builder_.getInt64Ty(), builder_.getInt64Ty()},
+                        false);
+                    llvm::Function* dispatchFn = module_->getFunction("at_native_dispatch");
+                    if (!dispatchFn) {
+                        dispatchFn = llvm::Function::Create(dispatchType,
+                            llvm::Function::ExternalLinkage, "at_native_dispatch", module_.get());
+                    }
+                    return builder_.CreateCall(dispatchFn, dispatchArgs, "native_call");
                 }
             }
             if (!calleeName.empty()) {

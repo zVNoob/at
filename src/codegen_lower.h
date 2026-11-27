@@ -23,6 +23,8 @@ struct LowerConfig {
     std::string modulePrefix;
     bool optimize = false;
     std::string targetTriple;
+    bool jitMode = false; // when true, emit at_native_dispatch calls for native functions
+    std::map<std::string, int64_t> nativeFnIndices; // function name -> index in g_nativeFns
 };
 
 struct LoweredResult {
@@ -64,6 +66,10 @@ public:
 
     void registerImportedModule(const std::string& varName, const std::string& modName) {
         importedModules_[varName] = modName;
+    }
+
+    void setNativeFnIndices(const std::map<std::string, int64_t>& indices) {
+        cfg_.nativeFnIndices = indices;
     }
 
     const std::map<std::string, std::string>& importedModules() const {
