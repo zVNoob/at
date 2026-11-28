@@ -108,6 +108,28 @@ struct ATSigDecl {
 constexpr uint32_t at_sigs_str(uint32_t i) noexcept { return i; }
 constexpr uint16_t at_sigs_tidx(uint16_t i) noexcept { return i; }
 
+// Compute byte offset of string at given index in a concatenated null-terminated table.
+constexpr size_t at_sigs_string_offset(const char* const* strs, size_t index) noexcept {
+    size_t off = 0;
+    for (size_t i = 0; i < index; ++i) {
+        const char* s = strs[i];
+        while (*s) { ++off; ++s; }
+        ++off; // null terminator
+    }
+    return off;
+}
+
+// Compute total size of concatenated null-terminated string table.
+constexpr size_t at_sigs_string_table_size(const char* const* strs, size_t count) noexcept {
+    size_t total = 0;
+    for (size_t i = 0; i < count; ++i) {
+        const char* s = strs[i];
+        while (*s) { ++total; ++s; }
+        ++total; // null terminator
+    }
+    return total;
+}
+
 constexpr ATSigType at_sigs_type_prim(uint8_t kind) noexcept {
     ATSigType t{}; t.tag = ATSG_T_PRIM; t.prim_kind = kind; return t;
 }

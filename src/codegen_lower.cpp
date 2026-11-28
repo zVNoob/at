@@ -870,16 +870,138 @@ void CodeGenLower::lowerStmt(const AstPtr& node) {
     }
 
     if (first && first->kind == "CHAR(42)" && node->children.size() >= 2 && node->children[1] && node->children[1]->kind == "CHAR(40)") {
+        // Unwrap: * (expr_list) { scope } [: { scope }]
+        // Evaluate each expression → pointer, load value, bind to identifier name, execute scope
+        AstPtr exprList = findChild(node, "expr_list");
+        auto savedNamed = namedValues_;
+        if (exprList) {
+            for (const auto& e : exprList->children) {
+                if (!e || e->kind != "expr") continue;
+                llvm::Value* ptrVal = lowerExpr(e);
+                if (!ptrVal) continue;
+
+                // Get the identifier name from the expression
+                std::string varName;
+                if (e->children.size() == 1 && e->children[0] && e->children[0]->kind == "IDENTIFIER") {
+                    varName = e->children[0]->text;
+                }
+
+                if (!varName.empty()) {
+                    // inttoptr to i8*, load i64 from that address
+                    llvm::Value* ptr = builder_.CreateIntToPtr(ptrVal, builder_.getPtrTy(), "unwrap_ptr");
+                    llvm::Value* loaded = builder_.CreateLoad(builder_.getInt64Ty(), ptr, "unwrap_val");
+
+                    llvm::Function* fn = builder_.GetInsertBlock()->getParent();
+                    llvm::AllocaInst* alloca = createEntryBlockAlloca(fn, varName, builder_.getInt64Ty());
+                    builder_.CreateStore(loaded, alloca);
+                    namedValues_[varName] = alloca;
+                }
+            }
+        }
+
+        // Execute scope body (with unwrapped bindings visible)
         for (const auto& c : node->children) {
             if (c && c->kind == "scope") lowerStmt(c);
         }
+
+        namedValues_ = std::move(savedNamed);
         return;
     }
 
     if (first && first->kind == "CHAR(63)" && node->children.size() >= 2 && node->children[1] && node->children[1]->kind == "CHAR(40)") {
+        // Try cast: ? (cast_stmt_list) { scope } [: { scope }]
+        // For each cast_stmt: expr -> Type
+        //   Evaluate expr → pointer, load type_id from object header (offset 0)
+        //   Compare against target type hash; if match, bind and execute scope
+        // If no cast matched and else scope exists, execute else scope
+        AstPtr castList = findChild(node, "cast_stmt_list");
+        AstPtr bodyScope = nullptr;
+        AstPtr elseScope = nullptr;
         for (const auto& c : node->children) {
-            if (c && c->kind == "scope") lowerStmt(c);
+            if (c && c->kind == "scope") {
+                if (!bodyScope) bodyScope = c;
+                else elseScope = c;
+            }
         }
+
+        auto savedNamed = namedValues_;
+        bool matched = false;
+
+        if (castList) {
+            for (const auto& cs : castList->children) {
+                if (!cs || cs->kind != "cast_stmt") continue;
+
+                // Find expr and type in cast_stmt
+                AstPtr castExpr = nullptr;
+                AstPtr castType = nullptr;
+                for (const auto& cc : cs->children) {
+                    if (cc && cc->kind == "expr" && !castExpr) castExpr = cc;
+                    if (cc && (cc->kind == "type" || cc->kind == "base_type" || cc->kind == "complex_type") && !castType) castType = cc;
+                }
+                if (!castExpr || !castType) continue;
+
+                // Get target type name from type node chain
+                std::string targetTypeName;
+                AstPtr typeNode = castType;
+                while (typeNode && (typeNode->kind == "type" || typeNode->kind == "base_type" || typeNode->kind == "complex_type")) {
+                    if (!typeNode->children.empty()) typeNode = typeNode->children[0];
+                    else break;
+                }
+                if (typeNode && typeNode->kind == "IDENTIFIER") {
+                    targetTypeName = typeNode->text;
+                }
+                if (targetTypeName.empty()) continue;
+
+                uint64_t targetTypeId = std::hash<std::string>{}(targetTypeName);
+
+                // Get identifier name to bind (from the expr, e.g., x -> Derived binds x)
+                std::string bindName;
+                if (castExpr->children.size() == 1 && castExpr->children[0] && castExpr->children[0]->kind == "IDENTIFIER") {
+                    bindName = castExpr->children[0]->text;
+                }
+
+                llvm::Function* fn = builder_.GetInsertBlock()->getParent();
+                llvm::BasicBlock* endBB = llvm::BasicBlock::Create(context_, "cast_end", fn);
+                llvm::BasicBlock* matchBB = llvm::BasicBlock::Create(context_, "cast_match", fn);
+                llvm::BasicBlock* nextBB = llvm::BasicBlock::Create(context_, "cast_next", fn);
+
+                // Evaluate expression → pointer value
+                llvm::Value* ptrVal = lowerExpr(castExpr);
+                if (!ptrVal) continue;
+
+                // Load type_id from object header (offset 0)
+                llvm::Value* ptr = builder_.CreateIntToPtr(ptrVal, builder_.getPtrTy(), "cast_ptr");
+                llvm::Value* typeIdSlot = builder_.CreateGEP(builder_.getInt64Ty(), ptr, builder_.getInt64(0), "cast_typeid_slot");
+                llvm::Value* objTypeId = builder_.CreateLoad(builder_.getInt64Ty(), typeIdSlot, "cast_obj_typeid");
+
+                // Compare against target type hash
+                llvm::Value* cond = builder_.CreateICmpEQ(objTypeId, builder_.getInt64(targetTypeId), "cast_cond");
+                builder_.CreateCondBr(cond, matchBB, nextBB);
+
+                // Match block: bind and execute body scope, then jump to end
+                builder_.SetInsertPoint(matchBB);
+                if (!bindName.empty()) {
+                    llvm::AllocaInst* alloca = createEntryBlockAlloca(fn, bindName, builder_.getInt64Ty());
+                    builder_.CreateStore(ptrVal, alloca);
+                    namedValues_[bindName] = alloca;
+                }
+                if (bodyScope) lowerStmt(bodyScope);
+                matched = true;
+                if (!builder_.GetInsertBlock()->getTerminator()) {
+                    builder_.CreateBr(endBB);
+                }
+
+                // No match: fall through to next cast_stmt
+                builder_.SetInsertPoint(nextBB);
+            }
+        }
+
+        // If no match and else scope exists, execute it
+        if (!matched && elseScope) {
+            lowerStmt(elseScope);
+        }
+
+        namedValues_ = std::move(savedNamed);
         return;
     }
 
@@ -1101,13 +1223,34 @@ llvm::Function* CodeGenLower::emitClass(const std::string& name, const AstPtr& c
     }
     classFieldNames_[name] = fieldNames;
 
+    size_t numFields = fieldNames.size();
+
+    // Object layout: offset 0 = type_id (i64), offset 1+ = fields
     std::vector<llvm::Type*> memberTys;
-    for (size_t i = 0; i < fieldNames.size(); ++i) memberTys.push_back(builder_.getInt64Ty());
+    memberTys.push_back(builder_.getInt64Ty()); // type_id at offset 0
+    for (size_t i = 0; i < numFields; ++i) memberTys.push_back(builder_.getInt64Ty());
     llvm::StructType* structTy = llvm::StructType::create(context_, memberTys, name + "_struct");
     classStructTypes_[name] = structTy;
 
+    // Emit TypeInfo global for downcasting:
+    // @TypeInfo_ClassName = constant { i8*, i64 } { parent_type_info_ptr, byte_offset_within_parent }
+    {
+        std::string tiName = "@TypeInfo_" + name;
+        if (!module_->getNamedGlobal(tiName)) {
+            llvm::StructType* tiStructTy = llvm::StructType::get(context_, {builder_.getInt8PtrTy(), builder_.getInt64Ty()});
+            // Find parent class (if this class extends another)
+            llvm::Constant* parentPtr = llvm::ConstantPointerNull::get(builder_.getInt8PtrTy());
+            llvm::Constant* offsetVal = llvm::ConstantInt::get(builder_.getInt64Ty(), 0);
+            llvm::Constant* tiInit = llvm::ConstantStruct::get(tiStructTy, {parentPtr, offsetVal});
+            auto* tiGv = new llvm::GlobalVariable(*module_, tiStructTy, true,
+                llvm::GlobalValue::PrivateLinkage, tiInit, tiName);
+            tiGv->setSection("at.typeinfo");
+            tiGv->setAlignment(llvm::Align(8));
+        }
+    }
+
     std::vector<llvm::Type*> paramTys;
-    for (size_t i = 0; i < fieldNames.size(); ++i) paramTys.push_back(builder_.getInt64Ty());
+    for (size_t i = 0; i < numFields; ++i) paramTys.push_back(builder_.getInt64Ty());
     llvm::FunctionType* ctorFT = llvm::FunctionType::get(builder_.getInt64Ty(), paramTys, false);
     std::string ctorName = mangleName(name);
     llvm::Function* ctor = llvm::Function::Create(ctorFT, llvm::Function::ExternalLinkage, ctorName, module_.get());
@@ -1115,7 +1258,8 @@ llvm::Function* CodeGenLower::emitClass(const std::string& name, const AstPtr& c
     builder_.SetInsertPoint(bb);
     currentFunction_ = ctor;
 
-    llvm::Value* size = builder_.getInt64(fieldNames.size() * 8);
+    // Size = (numFields + 1) * 8 (type_id + fields)
+    llvm::Value* size = builder_.getInt64((numFields + 1) * 8);
     llvm::Function* mallocFn = module_->getFunction("at_malloc");
     if (!mallocFn) {
         llvm::FunctionType* mallocType = llvm::FunctionType::get(builder_.getPtrTy(), {builder_.getInt64Ty()}, false);
@@ -1124,9 +1268,15 @@ llvm::Function* CodeGenLower::emitClass(const std::string& name, const AstPtr& c
     llvm::Value* rawPtr = builder_.CreateCall(mallocFn, {size}, "objptr");
     llvm::Value* objPtr = builder_.CreateBitCast(rawPtr, builder_.getPtrTy(), "obj");
 
+    // Store type_id at offset 0
+    uint64_t typeId = std::hash<std::string>{}(name);
+    llvm::Value* typeIdSlot = builder_.CreateGEP(builder_.getInt64Ty(), objPtr, builder_.getInt64(0), "typeid_slot");
+    builder_.CreateStore(builder_.getInt64(typeId), typeIdSlot);
+
+    // Store fields at offset 1+
     unsigned argIdx = 0;
-    for (size_t i = 0; i < fieldNames.size(); ++i) {
-        llvm::Value* fieldPtr = builder_.CreateGEP(builder_.getInt64Ty(), objPtr, builder_.getInt64((int64_t)i), "fieldptr");
+    for (size_t i = 0; i < numFields; ++i) {
+        llvm::Value* fieldPtr = builder_.CreateGEP(builder_.getInt64Ty(), objPtr, builder_.getInt64((int64_t)(i + 1)), "fieldptr");
         llvm::Value* val = nullptr;
         if (argIdx < ctor->arg_size()) {
             val = &*std::next(ctor->arg_begin(), argIdx);

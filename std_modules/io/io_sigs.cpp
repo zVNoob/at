@@ -38,11 +38,7 @@ constexpr const char* io_strings[] = {
 
 // Compute byte offset of each string in the concatenated null-terminated table.
 constexpr size_t string_offset(size_t index) noexcept {
-    size_t off = 0;
-    for (size_t i = 0; i < index; ++i) {
-        off += __builtin_strlen(io_strings[i]) + 1;
-    }
-    return off;
+    return at_sigs_string_offset(io_strings, index);
 }
 
 constexpr uint16_t STR_at_fopen = static_cast<uint16_t>(string_offset(0));
@@ -67,12 +63,20 @@ constexpr uint16_t STR_void = static_cast<uint16_t>(string_offset(18));
 
 // Total string table size (including final NUL from string literal concatenation).
 constexpr size_t string_table_size() noexcept {
-    size_t total = 0;
-    for (const char* s : io_strings) {
-        total += __builtin_strlen(s) + 1;
-    }
-    return total;
+    return at_sigs_string_table_size(io_strings, sizeof(io_strings)/sizeof(io_strings[0]));
 }
+
+// Compile-time string table built from io_strings.
+constexpr char string_table[] = []() constexpr {
+    char result[string_table_size()] = {};
+    size_t off = 0;
+    for (size_t i = 0; i < sizeof(io_strings)/sizeof(io_strings[0]); ++i) {
+        const char* s = io_strings[i];
+        while (*s) { result[off++] = *s++; }
+        result[off++] = '\0';
+    }
+    return result;
+}();
 
 // Type table indices.
 constexpr uint16_t TYP_int = 0;
@@ -163,26 +167,6 @@ struct {
         at_sigs_fn(STR_at_stderr, TYP_int, {}),
         at_sigs_fn(STR_at_io_stream_vtable_ptr, TYP_int, {}),
     },
-    // String table (concatenated null-terminated strings as one literal)
-    {
-        "at_fopen\0"
-        "at_fclose\0"
-        "at_fread\0"
-        "at_fwrite\0"
-        "at_feof\0"
-        "at_fflush\0"
-        "at_ftell\0"
-        "at_fseek\0"
-        "at_fgets\0"
-        "at_fputs\0"
-        "at_fputc\0"
-        "at_fgetc\0"
-        "at_stdin\0"
-        "at_stdout\0"
-        "at_stderr\0"
-        "at_io_stream_vtable_ptr\0"
-        "int\0"
-        "string\0"
-        "void\0"
-    },
+    // String table (compiled from io_strings)
+    string_table,
 };
