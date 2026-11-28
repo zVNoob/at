@@ -128,6 +128,7 @@ std::unique_ptr<LoweredResult> CodeGenLower::lower(const AstPtr& root,
                                                     bool isMainModule,
                                                     const std::vector<std::string>& initFuncs,
                                                     const std::string& initFuncName) {
+    sem_ = &sem;
     module_ = std::make_unique<llvm::Module>(cfg_.moduleName, context_);
     templateShapes_.clear();
     rtti_ = std::make_unique<RttiManager>(module_.get());
@@ -380,6 +381,42 @@ llvm::Value* CodeGenLower::lowerExpr(const AstPtr& node) {
         }
         return builder_.getInt64(0);
     }
+
+    // Address-of: & expr  -> returns i64 pointer value
+    if (!node->children.empty() && node->children[0] && node->children[0]->text == "&") {
+        if (node->children.size() < 2) return nullptr;
+        AstPtr operand = node->children[1];
+
+        // If operand is an IDENTIFIER with a named value, return its address directly
+        if (operand && operand->kind == "IDENTIFIER") {
+            auto it = namedValues_.find(operand->text);
+            if (it != namedValues_.end()) {
+                llvm::Value* addr = builder_.CreateBitCast(it->second, builder_.getInt8PtrTy(), "addr");
+                return builder_.CreatePtrToInt(addr, builder_.getInt64Ty(), "addr_int");
+            }
+        }
+
+        // Otherwise, allocate a temporary, store the value, return its address
+        llvm::Value* val = lowerExpr(operand);
+        if (!val) return nullptr;
+        llvm::AllocaInst* alloca = builder_.CreateAlloca(builder_.getInt64Ty(), nullptr, "addr_of_tmp");
+        builder_.CreateStore(val, alloca);
+        llvm::Value* addr = builder_.CreateBitCast(alloca, builder_.getInt8PtrTy(), "addr");
+        return builder_.CreatePtrToInt(addr, builder_.getInt64Ty(), "addr_int");
+    }
+
+    // Typeof: \`expr\`  -> returns i64 type ID
+    if (!node->children.empty() && node->children[0] && node->children[0]->text == "`") {
+        if (node->children.size() < 2) return nullptr;
+        AstPtr operand = node->children[1];
+        TypePtr t = sem_->typeOf(operand);
+        if (t) {
+            uint64_t typeId = std::hash<std::string>{}(t->name);
+            return builder_.getInt64(typeId);
+        }
+        return builder_.getInt64(0);
+    }
+
     if (node->children.size() == 3 && node->children[1]) {
         std::string op = node->children[1]->text;
         if (op == "+" || op == "-" || op == "*" || op == "/" || op == "%" ||

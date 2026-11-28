@@ -103,6 +103,7 @@ private:
 
     llvm::Function* currentFunction_ = nullptr;
     std::string modulePrefix_;
+    SemanticAnalyzer* sem_ = nullptr;
 
     llvm::AllocaInst* createEntryBlockAlloca(llvm::Function* function,
                                              const std::string& varName,

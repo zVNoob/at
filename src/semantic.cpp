@@ -966,11 +966,11 @@ TypePtr SemanticAnalyzer::checkExpr(const AstPtr& node, SymbolTable* scope) {
         return types_[node];
     }
 
-    // Borrow &
+    // Address-of: & expr -> pointer type: & expr -> *T
     if (!node->children.empty() && node->children[0] && node->children[0]->text == "&") {
         if (node->children.size() >= 2) {
             TypePtr t = checkExpr(node->children[1], scope);
-            auto r = makeReference(t ? t : makePrimitive(PrimitiveType::Kind::Unknown, "unknown"), true);
+            auto r = makePointer(t ? t : makePrimitive(PrimitiveType::Kind::Unknown, "unknown"));
             types_[node] = r;
             return r;
         }
