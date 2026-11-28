@@ -73,21 +73,21 @@ constexpr ATSigType string_types[] = {
 // Declaration table.
 constexpr ATSigDecl string_decls[] = {
     // string_length(string) -> int
-    at_sigs_fn(STR_string_length, TYP_int, {TYP_string}),
+    at_sigs_fn(STR_string_length, TYP_int, TYP_string),
     // string_substring(string, int, int) -> string
-    at_sigs_fn(STR_string_substring, TYP_string, {TYP_string, TYP_int, TYP_int}),
+    at_sigs_fn(STR_string_substring, TYP_string, TYP_string, TYP_int, TYP_int),
     // string_concat(string, string) -> string
-    at_sigs_fn(STR_string_concat, TYP_string, {TYP_string, TYP_string}),
+    at_sigs_fn(STR_string_concat, TYP_string, TYP_string, TYP_string),
     // string_char_at(string, int) -> int
-    at_sigs_fn(STR_string_char_at, TYP_int, {TYP_string, TYP_int}),
+    at_sigs_fn(STR_string_char_at, TYP_int, TYP_string, TYP_int),
     // string_find(string, string) -> int
-    at_sigs_fn(STR_string_find, TYP_int, {TYP_string, TYP_string}),
+    at_sigs_fn(STR_string_find, TYP_int, TYP_string, TYP_string),
     // string_parse_int(string) -> int
-    at_sigs_fn(STR_string_parse_int, TYP_int, {TYP_string}),
+    at_sigs_fn(STR_string_parse_int, TYP_int, TYP_string),
     // string_format_int(int) -> string
-    at_sigs_fn(STR_string_format_int, TYP_string, {TYP_int}),
+    at_sigs_fn(STR_string_format_int, TYP_string, TYP_int),
     // string_compare(string, string) -> int
-    at_sigs_fn(STR_string_compare, TYP_int, {TYP_string, TYP_string}),
+    at_sigs_fn(STR_string_compare, TYP_int, TYP_string, TYP_string),
 };
 
 // Single unnamed struct placed in the .at.sigs section.
@@ -114,14 +114,14 @@ struct {
     },
     // Declaration table
     {
-        at_sigs_fn(STR_string_length, TYP_int, {TYP_string}),
-        at_sigs_fn(STR_string_substring, TYP_string, {TYP_string, TYP_int, TYP_int}),
-        at_sigs_fn(STR_string_concat, TYP_string, {TYP_string, TYP_string}),
-        at_sigs_fn(STR_string_char_at, TYP_int, {TYP_string, TYP_int}),
-        at_sigs_fn(STR_string_find, TYP_int, {TYP_string, TYP_string}),
-        at_sigs_fn(STR_string_parse_int, TYP_int, {TYP_string}),
-        at_sigs_fn(STR_string_format_int, TYP_string, {TYP_int}),
-        at_sigs_fn(STR_string_compare, TYP_int, {TYP_string, TYP_string}),
+        at_sigs_fn(STR_string_length, TYP_int, TYP_string),
+        at_sigs_fn(STR_string_substring, TYP_string, TYP_string, TYP_int, TYP_int),
+        at_sigs_fn(STR_string_concat, TYP_string, TYP_string, TYP_string),
+        at_sigs_fn(STR_string_char_at, TYP_int, TYP_string, TYP_int),
+        at_sigs_fn(STR_string_find, TYP_int, TYP_string, TYP_string),
+        at_sigs_fn(STR_string_parse_int, TYP_int, TYP_string),
+        at_sigs_fn(STR_string_format_int, TYP_string, TYP_int),
+        at_sigs_fn(STR_string_compare, TYP_int, TYP_string, TYP_string),
     },
     // String table (concatenated null-terminated strings as one literal)
     {

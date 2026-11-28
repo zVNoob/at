@@ -13,6 +13,8 @@
 #define ATSG_MAGIC 0x47535441u
 #define ATSG_VERSION 4u
 
+#define ATSG_SECTION __attribute__((section(".at.sigs"), used))
+
 #define ATSG_T_PRIM     0
 #define ATSG_T_NAMED    1
 #define ATSG_T_FUNC     2
@@ -41,6 +43,17 @@
 #define ATSG_MAX_FIELDS     32
 #define ATSG_MAX_PARAMS     16
 #define ATSG_MAX_TMPL       8
+
+/*
+ * Section header.  Placed at the start of the .at.sigs section.
+ * 16 bytes: magic + version + num_types + num_decls.
+ */
+struct ATSigSection {
+    uint32_t magic;     /* ATSG_MAGIC */
+    uint32_t version;   /* ATSG_VERSION */
+    uint32_t num_types; /* number of type table entries */
+    uint32_t num_decls; /* number of declaration table entries */
+};
 
 /*
  * Type table entry.  Describes a type (primitive, named, class, function

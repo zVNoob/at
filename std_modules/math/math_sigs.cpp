@@ -75,27 +75,27 @@ constexpr ATSigType math_types[] = {
 // Declaration table.
 constexpr ATSigDecl math_decls[] = {
     // math_abs(int) -> int
-    at_sigs_fn(STR_math_abs, TYP_int, {TYP_int}),
+    at_sigs_fn(STR_math_abs, TYP_int, TYP_int),
     // math_add(int, int) -> int
-    at_sigs_fn(STR_math_add, TYP_int, {TYP_int, TYP_int}),
+    at_sigs_fn(STR_math_add, TYP_int, TYP_int, TYP_int),
     // math_sub(int, int) -> int
-    at_sigs_fn(STR_math_sub, TYP_int, {TYP_int, TYP_int}),
+    at_sigs_fn(STR_math_sub, TYP_int, TYP_int, TYP_int),
     // math_mul(int, int) -> int
-    at_sigs_fn(STR_math_mul, TYP_int, {TYP_int, TYP_int}),
+    at_sigs_fn(STR_math_mul, TYP_int, TYP_int, TYP_int),
     // math_div(int, int) -> int
-    at_sigs_fn(STR_math_div, TYP_int, {TYP_int, TYP_int}),
+    at_sigs_fn(STR_math_div, TYP_int, TYP_int, TYP_int),
     // math_mod(int, int) -> int
-    at_sigs_fn(STR_math_mod, TYP_int, {TYP_int, TYP_int}),
+    at_sigs_fn(STR_math_mod, TYP_int, TYP_int, TYP_int),
     // math_min(int, int) -> int
-    at_sigs_fn(STR_math_min, TYP_int, {TYP_int, TYP_int}),
+    at_sigs_fn(STR_math_min, TYP_int, TYP_int, TYP_int),
     // math_max(int, int) -> int
-    at_sigs_fn(STR_math_max, TYP_int, {TYP_int, TYP_int}),
+    at_sigs_fn(STR_math_max, TYP_int, TYP_int, TYP_int),
     // math_pow2(int) -> int
-    at_sigs_fn(STR_math_pow2, TYP_int, {TYP_int}),
+    at_sigs_fn(STR_math_pow2, TYP_int, TYP_int),
     // math_is_even(int) -> int
-    at_sigs_fn(STR_math_is_even, TYP_int, {TYP_int}),
+    at_sigs_fn(STR_math_is_even, TYP_int, TYP_int),
     // math_is_odd(int) -> int
-    at_sigs_fn(STR_math_is_odd, TYP_int, {TYP_int}),
+    at_sigs_fn(STR_math_is_odd, TYP_int, TYP_int),
 };
 
 // Single unnamed struct placed in the .at.sigs section.
@@ -121,17 +121,17 @@ struct {
     },
     // Declaration table
     {
-        at_sigs_fn(STR_math_abs, TYP_int, {TYP_int}),
-        at_sigs_fn(STR_math_add, TYP_int, {TYP_int, TYP_int}),
-        at_sigs_fn(STR_math_sub, TYP_int, {TYP_int, TYP_int}),
-        at_sigs_fn(STR_math_mul, TYP_int, {TYP_int, TYP_int}),
-        at_sigs_fn(STR_math_div, TYP_int, {TYP_int, TYP_int}),
-        at_sigs_fn(STR_math_mod, TYP_int, {TYP_int, TYP_int}),
-        at_sigs_fn(STR_math_min, TYP_int, {TYP_int, TYP_int}),
-        at_sigs_fn(STR_math_max, TYP_int, {TYP_int, TYP_int}),
-        at_sigs_fn(STR_math_pow2, TYP_int, {TYP_int}),
-        at_sigs_fn(STR_math_is_even, TYP_int, {TYP_int}),
-        at_sigs_fn(STR_math_is_odd, TYP_int, {TYP_int}),
+        at_sigs_fn(STR_math_abs, TYP_int, TYP_int),
+        at_sigs_fn(STR_math_add, TYP_int, TYP_int, TYP_int),
+        at_sigs_fn(STR_math_sub, TYP_int, TYP_int, TYP_int),
+        at_sigs_fn(STR_math_mul, TYP_int, TYP_int, TYP_int),
+        at_sigs_fn(STR_math_div, TYP_int, TYP_int, TYP_int),
+        at_sigs_fn(STR_math_mod, TYP_int, TYP_int, TYP_int),
+        at_sigs_fn(STR_math_min, TYP_int, TYP_int, TYP_int),
+        at_sigs_fn(STR_math_max, TYP_int, TYP_int, TYP_int),
+        at_sigs_fn(STR_math_pow2, TYP_int, TYP_int),
+        at_sigs_fn(STR_math_is_even, TYP_int, TYP_int),
+        at_sigs_fn(STR_math_is_odd, TYP_int, TYP_int),
     },
     // String table (concatenated null-terminated strings as one literal)
     {
