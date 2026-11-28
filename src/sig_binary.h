@@ -77,7 +77,7 @@ struct BinSigType {
     uint32_t field_count = 0;
     struct Field {
         std::string name;
-        uint16_t type_idx;
+        std::shared_ptr<BinSigType> type;  // type of the field
         uint32_t offset;
         uint8_t flags; // ATSG_FLAG_CONST, ATSG_FLAG_PUBLIC, ATSG_FLAG_PRIVATE
     };
@@ -119,7 +119,7 @@ public:
 
 private:
     std::vector<uint8_t> buf_;
-    std::map<const BinSigType*, uint16_t> typeIndex_;
+    std::map<std::string, uint16_t> typeIndex_;
     std::map<std::string, const BinSigType*> canonicalTypes_;
     const std::vector<BinSigType>* extraTypes_ = nullptr;
 
