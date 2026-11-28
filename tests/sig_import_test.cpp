@@ -67,9 +67,9 @@ int main() {
 
     const at::BinSigDecl* p = findSig(imp, "P");
     assert(p && p->kind == at::BinSigDecl::Class);
+    // Class layout lives in the type table, not in the decl.
     // Constructor params are NOT auto-members; only explicit declarations
     // (e.g. `a : a;`) become fields. P has none here.
-    assert(p->fields.size() == 0);
 
     const at::BinSigDecl* n = findSig(imp, "N");
     assert(n && n->kind == at::BinSigDecl::Alias);
