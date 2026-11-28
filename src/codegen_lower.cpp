@@ -869,6 +869,63 @@ void CodeGenLower::lowerStmt(const AstPtr& node) {
         return;
     }
 
+    // If statement: expr ? { scope } [: { scope }]
+    // children[0] = condition expr, children[1] = CHAR(63) (?)
+    // children[2] = {, children[3] = then-scope, children[4] = }
+    // optional: children[5] = :, children[6] = {, children[7] = else-scope, children[8] = }
+    if (node->children.size() >= 2 && node->children[1] && node->children[1]->kind == "CHAR(63)") {
+        llvm::Function* fn = builder_.GetInsertBlock()->getParent();
+
+        // Evaluate condition expression
+        llvm::Value* condVal = lowerExpr(node->children[0]);
+        if (!condVal) return;
+
+        // Condition is true if non-zero (i64) or directly i1 (from comparison)
+        llvm::Value* cond;
+        if (condVal->getType()->isIntegerTy(1)) {
+            cond = condVal;
+        } else {
+            cond = builder_.CreateICmpNE(condVal, builder_.getInt64(0), "if_cond");
+        }
+
+        // Find then-scope and else-scope
+        AstPtr thenScope = nullptr;
+        AstPtr elseScope = nullptr;
+        bool hasElse = false;
+        for (size_t i = 2; i < node->children.size(); ++i) {
+            if (node->children[i] && node->children[i]->kind == "scope") {
+                if (!thenScope) thenScope = node->children[i];
+                else { elseScope = node->children[i]; hasElse = true; }
+            }
+        }
+        if (!thenScope) return;
+
+        llvm::BasicBlock* thenBB = llvm::BasicBlock::Create(context_, "if.then", fn);
+        llvm::BasicBlock* endBB = llvm::BasicBlock::Create(context_, "if.end", fn);
+        llvm::BasicBlock* elseBB = hasElse ? llvm::BasicBlock::Create(context_, "if.else", fn) : nullptr;
+
+        builder_.CreateCondBr(cond, thenBB, elseBB ? elseBB : endBB);
+
+        // Then block
+        builder_.SetInsertPoint(thenBB);
+        lowerStmt(thenScope);
+        if (!builder_.GetInsertBlock()->getTerminator()) {
+            builder_.CreateBr(endBB);
+        }
+
+        // Else block
+        if (elseBB && elseScope) {
+            builder_.SetInsertPoint(elseBB);
+            lowerStmt(elseScope);
+            if (!builder_.GetInsertBlock()->getTerminator()) {
+                builder_.CreateBr(endBB);
+            }
+        }
+
+        builder_.SetInsertPoint(endBB);
+        return;
+    }
+
     if (first && first->kind == "CHAR(42)" && node->children.size() >= 2 && node->children[1] && node->children[1]->kind == "CHAR(40)") {
         // Unwrap: * (expr_list) { scope } [: { scope }]
         // Evaluate each expression → pointer, load value, bind to identifier name, execute scope
