@@ -1,0 +1,2 @@
+chain = 'tests/import_chain_c.at';
+chain.val_a;

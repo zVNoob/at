@@ -1,0 +1,3 @@
+l = 'tests/import_dia_left.at';
+r = 'tests/import_dia_right.at';
+l.left_val + r.right_val;

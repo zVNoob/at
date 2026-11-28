@@ -1,0 +1,2 @@
+leaf = 'tests/import_dia_leaf.at';
+left_val : `0` = 10;

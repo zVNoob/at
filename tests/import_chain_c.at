@@ -1,0 +1,2 @@
+b = 'tests/import_chain_b.at';
+val_a : `0` = 200;
