@@ -8,6 +8,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <set>
 #include <string>
 #include <map>
 #include <functional>
@@ -27,8 +28,9 @@ void dump(const at::AstPtr& node, int indent = 0) {
 }
 
 // Compile an imported .at file in-process (no subprocess, no shell injection).
+// If outAst is non-null, the parsed AST is returned for recursive import scanning.
 bool compileImportedModule(const std::string& path, const std::string& outputPath,
-                          const std::string& initFuncName) {
+                          const std::string& initFuncName, at::AstPtr* outAst = nullptr) {
     std::ifstream f(path);
     if (!f) {
         std::cerr << "Warning: cannot open imported module: " << path << "\n";
@@ -58,6 +60,8 @@ bool compileImportedModule(const std::string& path, const std::string& outputPat
         std::cerr << "Warning: codegen failed for imported module: " << path << "\n";
         return false;
     }
+
+    if (outAst) *outAst = ast;
     return true;
 }
 
@@ -191,6 +195,10 @@ y : \`0\` = x + 1;
     std::vector<std::string> importedInitFuncs;
     std::map<std::string, std::string> importedModules;
     at::IncrementalBuilder builder;
+// Circular import detection: track modules currently being compiled.
+std::set<std::string> compilingModules;
+bool circularImportDetected = false;
+
     std::function<void(const at::AstPtr&)> scanImports = [&](const at::AstPtr& node) {
         if (!node) return;
         if (node->kind == "stmt" && node->children.size() >= 3 &&
@@ -213,6 +221,13 @@ y : \`0\` = x + 1;
                 if (dot != std::string::npos) modName = modName.substr(0, dot);
                 importedModules[varName] = modName;
 
+                // Circular import detection: if this module is already being compiled, it's a cycle.
+                if (compilingModules.count(path)) {
+                    std::cerr << "Error: circular import detected: " << path << "\n";
+                    circularImportDetected = true;
+                    return;
+                }
+
                 std::string importedObj = buildDir.empty() ? ("/tmp/" + modName + ".o") : (buildDir + "/" + modName + ".o");
                 builder.addFile(path, importedObj);
                 builder.addDependency(importedObj, path);
@@ -224,19 +239,34 @@ y : \`0\` = x + 1;
                     return;
                 }
 
-                if (compileImportedModule(path, importedObj, modName + "_init")) {
+                compilingModules.insert(path);
+
+                at::AstPtr importedAst;
+                if (compileImportedModule(path, importedObj, modName + "_init", &importedAst)) {
                     builder.markCompiled(path, importedObj);
                     importedObjFiles.push_back(importedObj);
                     importedInitFuncs.push_back(modName + "_init");
                     std::cout << "Imported module: " << modName << " from " << path << "\n";
+
+                    // Recursively scan the imported module's own imports.
+                    if (importedAst) {
+                        scanImports(importedAst);
+                    }
                 } else {
                     std::cerr << "Warning: failed to compile imported module: " << path << "\n";
                 }
+
+                compilingModules.erase(path);
             }
         }
         for (const auto& c : node->children) scanImports(c);
     };
     scanImports(ast);
+
+    if (circularImportDetected) {
+        std::cerr << "Compilation aborted due to circular imports\n";
+        return 1;
+    }
 
     if (compileMode) {
         std::string baseName = inputFile;
