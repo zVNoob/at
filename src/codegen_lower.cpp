@@ -240,6 +240,10 @@ std::unique_ptr<LoweredResult> CodeGenLower::lower(const AstPtr& root,
         std::vector<BinSigType> classTypes;
         std::map<std::string, uint16_t> classNameToTypeIdx;
 
+        // Create Prim(PInt) type for field types
+        BinSigType intType = BinSigType::prim(BinSigType::PInt);
+        uint16_t intTypeIdx = 0;
+
         for (const auto& kv : classStructTypes_) {
             const std::string& className = kv.first;
             const auto& fieldNamesIt = classFieldNames_.find(className);
@@ -258,7 +262,7 @@ std::unique_ptr<LoweredResult> CodeGenLower::lower(const AstPtr& root,
             for (size_t i = 0; i < fieldNames.size(); ++i) {
                 BinSigType::Field f;
                 f.name = fieldNames[i];
-                f.type_idx = 0; // i64 = Prim(PInt) - will be resolved below
+                f.type = std::make_shared<BinSigType>(intType);
                 f.offset = (uint32_t)(i * 8);
                 f.flags = ATSG_FLAG_PUBLIC; // public by default
                 bt.fields.push_back(f);
@@ -267,27 +271,8 @@ std::unique_ptr<LoweredResult> CodeGenLower::lower(const AstPtr& root,
             classNameToTypeIdx[className] = (uint16_t)(classTypes.size() - 1);
         }
 
-        // Resolve field type indices: i64 fields point to Prim(PInt) type
-        // Find or create Prim(PInt) type in classTypes
-        uint16_t intTypeIdx = 0;
-        bool intTypeFound = false;
-        for (size_t i = 0; i < classTypes.size(); ++i) {
-            if (classTypes[i].tag == BinSigType::Prim && classTypes[i].primKind == BinSigType::PInt) {
-                intTypeIdx = (uint16_t)i;
-                intTypeFound = true;
-                break;
-            }
-        }
-        if (!intTypeFound) {
-            BinSigType intType = BinSigType::prim(BinSigType::PInt);
-            intTypeIdx = (uint16_t)classTypes.size();
-            classTypes.push_back(intType);
-        }
-        for (auto& ct : classTypes) {
-            for (auto& f : ct.fields) {
-                f.type_idx = intTypeIdx;
-            }
-        }
+        intTypeIdx = (uint16_t)classTypes.size();
+        classTypes.push_back(intType);
 
         // Set typeIdx for class decls
         for (auto& d : sigs_) {
